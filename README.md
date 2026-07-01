@@ -1,111 +1,99 @@
 # Brand Manual PDF
 
-> Skill para gerar manuais de marca completos em PDF — formato editorial, páginas alternando escuro e claro, landscape 16:9. Criado por **Higor Manoel** ([@higormanoeldesign](https://instagram.com/higormanoeldesign)).
+> Skill para o Claude Code gerar manuais de marca completos em PDF — formato editorial, páginas alternando escuro e claro, landscape 16:9.
+
+Desenvolvida por **Higor Manoel** ([@higormanoeldesign](https://instagram.com/higormanoeldesign)).
 
 ---
 
 ## O que essa Skill faz
 
-Transforma as informações de uma marca em um manual de marca profissional em PDF, cobrindo:
+Conduz o usuário por todas as perguntas necessárias para montar um manual de marca profissional, analisa o que está faltando, e só gera o PDF quando todas as informações estiverem completas.
 
-- Identidade & Posicionamento
-- Narrativas da Marca
-- Arquétipos
-- Tom de Voz com Dos & Donts por modo
-- Mantras & Dicionário da Marca
-- Paleta de Cores
-- Tipografia
-- Logotipo (opcional)
-- Pilares de Conteúdo
-- Estilo Visual
-- Créditos (sempre assinado por Higor Manoel + contribuidores listados)
+**Seções cobertas:**
 
-O resultado final é um PDF gerado via HTML + Chrome headless, com o mesmo padrão visual de manuais editoriais de alto padrão.
+| # | Seção |
+|---|-------|
+| Capa | Identidade visual da capa |
+| 001 | Identidade & Posicionamento |
+| — | Como nos definimos |
+| — | Narrativas da Marca |
+| 002 | Arquétipos |
+| 003 | Tom de Voz (por modo + Dos & Donts) |
+| 004 | Mantras & Dicionário da Marca |
+| 005 | Paleta de Cores |
+| 006 | Tipografia |
+| 007 | Logotipo e aplicações *(opcional)* |
+| 008 | Pilares de Conteúdo |
+| 009 | Estilo Visual |
+| — | Créditos |
+
+Os créditos são **sempre perguntados ao usuário** — a skill não assume nada.
 
 ---
 
 ## Pré-requisitos
 
-Antes de começar, você precisa ter instalado:
-
-- **macOS** (o script de PDF usa o Chrome do Mac)
-- **Google Chrome** — [google.com/chrome](https://www.google.com/chrome/)
-- **Node.js 18+** — [nodejs.org](https://nodejs.org/) ou via `brew install node`
-- **Git** — geralmente já vem no Mac; confirme com `git --version`
+- **macOS**
+- **Google Chrome** → [google.com/chrome](https://www.google.com/chrome/)
+- **Node.js 18+** → [nodejs.org](https://nodejs.org/) ou `brew install node`
+- **Git** → já vem no Mac; confirme com `git --version`
 
 ---
 
 ## 1. Instalar o Claude Code
 
-O Claude Code é a CLI oficial da Anthropic. Abra o Terminal e rode:
-
 ```bash
 npm install -g @anthropic/claude-code
 ```
 
-Depois, faça login:
+Na primeira vez, autentique com sua conta Anthropic:
 
 ```bash
 claude
 ```
 
-Na primeira vez ele vai pedir para autenticar com sua conta Anthropic. Siga as instruções na tela.
-
-> **Sem conta?** Crie uma em [claude.ai](https://claude.ai) antes de continuar.
+> Sem conta? Crie uma em [claude.ai](https://claude.ai).
 
 ---
 
 ## 2. Instalar a Skill
 
-### Opção A — Clonar direto na pasta de skills
+### Clonar direto na pasta de skills
 
 ```bash
-# Cria a pasta de skills se não existir
 mkdir -p ~/.codex/skills
-
-# Clona o repositório
 git clone https://github.com/higormanoel/brand-manual-pdf.git ~/.codex/skills/brand-manual-pdf
 ```
 
-Pronto. O Claude Code detecta skills automaticamente nessa pasta.
+O Claude Code detecta skills automaticamente nessa pasta. Pronto.
 
-### Opção B — Clonar em outro lugar e criar symlink
-
-```bash
-git clone https://github.com/higormanoel/brand-manual-pdf.git ~/brand-manual-pdf
-ln -s ~/brand-manual-pdf ~/.codex/skills/brand-manual-pdf
-```
-
-### Verificar a instalação
+### Verificar
 
 ```bash
 ls ~/.codex/skills/brand-manual-pdf
-# Deve mostrar: SKILL.md  agents/  assets/  scripts/
+# SKILL.md  agents/  assets/  scripts/
 ```
 
 ---
 
 ## 3. Usar a Skill
 
-Abra o Terminal na pasta do seu projeto (ou em qualquer lugar) e inicie o Claude Code:
+Abra o Terminal e inicie o Claude Code:
 
 ```bash
 claude
 ```
 
-Dentro do Claude Code, peça para criar um manual de marca:
+Peça para criar um manual de marca:
 
 ```
 Crie um manual de marca em PDF para minha marca
 ```
 
-ou
-
 ```
 Quero fazer um brand manual da [nome da marca]
 ```
-
-ou forneça o perfil do Instagram direto:
 
 ```
 Crie um manual de marca para https://www.instagram.com/nomedomarca/
@@ -113,66 +101,51 @@ Crie um manual de marca para https://www.instagram.com/nomedomarca/
 
 ---
 
-## 4. O que esperar
+## 4. Como funciona o processo
 
-O Claude vai conduzir o processo em **7 fases de perguntas**, sempre uma fase por vez — nunca tudo de uma vez.
+A skill conduz tudo em **3 estágios**:
 
-### Fase 1 — Identidade
-- Nome e handle da marca
-- Perfil do Instagram (URL ou print da tela)
-- Nicho e público-alvo
-- Proposta de valor
-- Frase de posicionamento
+### Estágio 1 — Coleta de informações
 
-### Fase 2 — Personalidade
-- "Como nos definimos" (3 frases curtas)
-- Principais narrativas
-- Arquétipos de marca
-- Modos de tom de voz + Direcionadores + Pontos de atenção
-- Dos & Donts por modo de voz
+O Claude faz as perguntas em **7 fases**, uma por vez — nunca tudo de uma vez:
 
-### Fase 3 — Identidade Verbal
-- Mantras (8–12 frases)
-- Dicionário da marca (palavras preferidas + termos proprietários)
+| Fase | O que é pedido |
+|------|---------------|
+| 1 | Nome, handle, Instagram/referência visual, nicho, público, proposta de valor, frase de posicionamento |
+| 2 | Como nos definimos, narrativas, arquétipos, modos de tom de voz, Dos & Donts |
+| 3 | Mantras e dicionário da marca |
+| 4 | Paleta de cores, fontes, estilo visual, regras de aplicação |
+| 5 | Logotipo e tagline *(opcional)* |
+| 6 | Pilares de conteúdo |
+| 7 | **Quem assina o manual** (designer + contribuidores) |
 
-### Fase 4 — Identidade Visual
-- Paleta de cores (hex codes)
-- Fonte primária e secundária
-- Estilo visual + regras de aplicação
-
-### Fase 5 — Logotipo *(opcional)*
-- Arquivo de logo
-- Tagline
-
-### Fase 6 — Pilares de Conteúdo
-- 3–5 pilares com descrição e exemplos
-
-### Fase 7 — Créditos
-- Quem mais contribuiu para o projeto
+> A Fase 7 é sempre perguntada. Nenhum nome é assumido automaticamente.
 
 ---
 
-## 5. Output
+### Estágio 2 — Análise e gaps
 
-O PDF é salvo por padrão em:
+Depois de coletar tudo, o Claude analisa o que está completo e o que falta. Se encontrar algum dado insuficiente, ele vai **diretamente ao ponto** e pede só o que falta — sem repetir o que já foi respondido.
 
-```
-/Users/[seu-usuario]/Desktop/Motions/COM IA/Manual_da_Marca_[marca].pdf
-```
+Isso continua até que **todas as seções estejam completas**.
 
-Você pode pedir para salvar em outro lugar durante a conversa.
+---
+
+### Estágio 3 — Geração do PDF
+
+Só quando tudo estiver completo o Claude gera o HTML, renderiza via Chrome headless e salva o PDF. Ele pergunta onde você quer salvar antes de gerar.
 
 ---
 
 ## Análise de Instagram
 
-Se você fornecer um perfil do Instagram (URL ou print), o Claude vai extrair automaticamente:
+Se você fornecer um perfil do Instagram (URL ou print da tela), a skill extrai automaticamente:
 
 - Bio e posicionamento
 - Padrões de copy nos títulos dos posts
-- Cores dominantes do feed
+- Cores dominantes do feed (estimativa de hex)
 - Estilo visual e tratamento fotográfico
-- Marcas ou agências vinculadas (que podem ter cores institucionais próprias)
+- Marcas ou agências vinculadas (que podem ter cores institucionais)
 
 ---
 
@@ -180,18 +153,18 @@ Se você fornecer um perfil do Instagram (URL ou print), o Claude vai extrair au
 
 ```
 brand-manual-pdf/
-├── SKILL.md                        # Instruções para o Claude
+├── SKILL.md                        # Instruções completas para o Claude
 ├── agents/
 │   └── openai.yaml                 # Metadados da skill
 ├── assets/
-│   └── template_brand_manual.html  # Template HTML completo com CSS
+│   └── template_brand_manual.html  # Template HTML + CSS completo
 └── scripts/
-    └── generate_pdf.sh             # Script Chrome headless → PDF
+    └── generate_pdf.sh             # Chrome headless → PDF
 ```
 
 ---
 
-## Atualizar a Skill
+## Atualizar
 
 ```bash
 cd ~/.codex/skills/brand-manual-pdf
@@ -200,9 +173,9 @@ git pull
 
 ---
 
-## Créditos
+## Desenvolvida por
 
-Criado por **Higor Manoel** — Designer, Estratégia de Marca & IA Aplicada.
+**Higor Manoel** — Designer, Estratégia de Marca & IA Aplicada
 
 - Instagram: [@higormanoeldesign](https://instagram.com/higormanoeldesign)
 - GitHub: [github.com/higormanoel](https://github.com/higormanoel)
