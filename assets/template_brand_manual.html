@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Manual da Marca — [BRAND_HANDLE]</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!--
+  Replace font imports per brand:
+  - Primary font: Montserrat (default) or brand-specified Google Font
+  - Secondary font: Playfair Display (default) or brand-specified
+-->
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400&family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+@page { size: 297mm 167mm; margin: 0; }
+
+/*
+  ── BRAND COLOR VARIABLES ──
+  Replace these with actual brand hex values before generating the PDF.
+  --accent: brand signature/accent color (used in palette swatches + 1 cover word)
+  --bg-dark: primary dark background (usually near-black)
+  --text-light: text on dark pages (usually off-white)
+  --bg-light: light page background (usually white or warm off-white)
+  --text-dark: text on light pages
+  --support-1, --support-2: secondary palette colors
+*/
+:root {
+  --bg-dark: #0B0E0E;
+  --bg-light: #FFFFFF;
+  --offwhite: #F8F7F4;
+  --accent: #CEA245;       /* → replace with brand signature color */
+  --support-1: #926627;
+  --support-2: #1E241D;
+  --text-dark: #0B0E0E;
+  --text-light: #F8F7F4;
+  --gray-muted: rgba(248,247,244,0.35);
+  --gray-text: rgba(11,14,14,0.55);
+  --font-primary: 'Montserrat', sans-serif;    /* → replace with brand primary font */
+  --font-secondary: 'Playfair Display', serif; /* → replace with brand secondary font */
+}
+
+html, body {
+  font-family: var(--font-primary);
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+/* ── PAGE BASE ── */
+.page {
+  width: 297mm;
+  height: 167mm;
+  position: relative;
+  overflow: hidden;
+  page-break-after: always;
+  break-after: page;
+}
+
+.dark { background: var(--bg-dark); color: var(--text-light); }
+.light { background: var(--bg-light); color: var(--text-dark); }
+
+/* ── COVER ── */
+.cover {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 10mm 14mm 9mm;
+}
+.cover-rule { width: 100%; height: 0.4mm; background: var(--text-light); opacity: 0.18; margin-bottom: 8mm; }
+.cover-handle { font-size: 7.5pt; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--text-light); opacity: 0.5; margin-bottom: 3mm; }
+.cover-title { font-size: 40pt; font-weight: 800; line-height: 0.95; letter-spacing: -0.03em; color: var(--text-light); }
+.cover-title span { color: var(--accent); }
+.cover-sub { font-family: var(--font-secondary); font-style: italic; font-size: 11pt; color: var(--text-light); opacity: 0.45; margin-top: 3mm; }
+.cover-footer { display: flex; justify-content: space-between; align-items: center; }
+.cover-footer-rule { width: 100%; height: 0.3mm; background: var(--text-light); opacity: 0.12; margin-bottom: 4mm; }
+.cover-footer-text { font-size: 6.5pt; font-weight: 400; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-light); opacity: 0.4; }
+
+/* ── SECTION OPENER (dark) ── */
+.opener {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 10mm 14mm 11mm;
+}
+.opener-row { display: flex; align-items: baseline; gap: 8mm; margin-bottom: 4mm; }
+.opener-num { font-size: 52pt; font-weight: 800; color: var(--gray-muted); letter-spacing: -0.04em; line-height: 1; }
+.opener-title { font-size: 28pt; font-weight: 700; color: var(--text-light); letter-spacing: -0.02em; line-height: 1.1; }
+.opener-rule { width: 100%; height: 0.35mm; background: var(--text-light); opacity: 0.15; }
+
+/* ── LIGHT CONTENT PAGE (lp) ── */
+.lp {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+}
+.lp-header {
+  padding: 7mm 14mm 0;
+  flex-shrink: 0;
+}
+.lp-header-label {
+  font-size: 6pt; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--text-dark); opacity: 0.4;
+  padding-bottom: 3mm;
+  border-bottom: 0.3mm solid var(--text-dark);
+  opacity: 0.25;
+}
+.lp-body {
+  display: flex;
+  flex: 1;
+  padding: 5mm 14mm 0;
+  gap: 10mm;
+  overflow: hidden;
+}
+.lp-footer {
+  padding: 0 14mm 6mm;
+  flex-shrink: 0;
+  border-top: 0.3mm solid var(--text-dark);
+  opacity: 0.2;
+  display: flex;
+  justify-content: space-between;
+  padding-top: 3mm;
+  margin-top: auto;
+}
+.lp-footer-l, .lp-footer-r {
+  font-size: 6pt; font-weight: 500; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--text-dark); opacity: 0.4;
+}
+/* Restore footer opacity since parent is 0.2 */
+.lp-footer { opacity: 1; }
+.lp-footer::before { content: ''; display: block; position: absolute; left: 14mm; right: 14mm; height: 0.3mm; background: var(--text-dark); opacity: 0.15; }
+
+/* ── COLUMN SYSTEM ── */
+.col { display: flex; flex-direction: column; }
+.col-div { width: 0.3mm; background: var(--text-dark); opacity: 0.1; flex-shrink: 0; }
+.col-narrow { flex: 1; }
+.col-wide { flex: 1.6; }
+
+/* ── TYPOGRAPHY ── */
+.sec-title { font-size: 14pt; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 4mm; }
+.body-s { font-size: 7.5pt; line-height: 1.65; color: var(--text-dark); }
+.body-s p { margin-bottom: 3mm; }
+.body-s strong { font-weight: 700; }
+.quote-large { font-size: 18pt; font-weight: 800; line-height: 1.15; letter-spacing: -0.03em; color: var(--text-dark); margin-top: auto; margin-bottom: auto; }
+.quote-attr { font-size: 7pt; font-weight: 500; letter-spacing: 0.08em; color: var(--gray-text); margin-top: 4mm; opacity: 0.6; }
+
+/* ── ARCHETYPES ── */
+.arch-grid { display: flex; gap: 5mm; flex: 1; align-items: flex-start; padding-top: 2mm; }
+.arch-card { flex: 1; border-top: 0.8mm solid var(--text-dark); padding-top: 4mm; }
+.arch-badge {
+  font-size: 5.5pt; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase;
+  color: var(--gray-text); margin-bottom: 3mm;
+}
+.arch-name { font-family: var(--font-secondary); font-style: italic; font-size: 18pt; font-weight: 700; line-height: 1.1; margin-bottom: 3mm; }
+.arch-desc { font-size: 7pt; line-height: 1.6; color: var(--gray-text); margin-bottom: 4mm; }
+.arch-chips { display: flex; flex-wrap: wrap; gap: 2mm; }
+.arch-chip {
+  font-size: 5pt; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+  border: 0.3mm solid var(--text-dark); padding: 1.5mm 3mm; opacity: 0.55;
+}
+
+/* ── VOICE & TONE ── */
+.voice-card { flex: 1; }
+.voice-title { font-size: 18pt; font-weight: 800; letter-spacing: -0.03em; line-height: 1; margin-bottom: 1mm; }
+.voice-sub { font-family: var(--font-secondary); font-style: italic; font-size: 9pt; color: var(--gray-text); margin-bottom: 4mm; }
+.voice-body { font-size: 7pt; line-height: 1.65; color: var(--gray-text); margin-bottom: 4mm; }
+.voice-col-label { font-size: 6pt; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 3mm; border-bottom: 0.3mm solid var(--text-dark); opacity: 0.5; padding-bottom: 1.5mm; }
+.voice-list { list-style: none; font-size: 7pt; line-height: 1.7; }
+.voice-list li::before { content: "·  "; font-weight: 700; }
+
+/* ── DOS & DONTS ── */
+.dd-grid { display: flex; gap: 6mm; flex: 1; }
+.dd-col { flex: 1; display: flex; flex-direction: column; gap: 5mm; }
+.dd-item { border-top: 0.3mm solid var(--text-dark); padding-top: 3mm; opacity: 0.9; }
+.dd-mark { font-size: 10pt; font-weight: 800; margin-bottom: 1.5mm; }
+.dd-mark.wrong { color: #C0392B; }
+.dd-mark.right { color: #27AE60; }
+.dd-wrong { font-size: 7.5pt; line-height: 1.5; color: var(--gray-text); text-decoration: line-through; margin-bottom: 2mm; }
+.dd-right { font-size: 7.5pt; line-height: 1.5; font-weight: 700; margin-bottom: 2mm; }
+.dd-arrow { font-size: 6.5pt; line-height: 1.5; color: var(--gray-text); opacity: 0.7; }
+.dd-arrow::before { content: "→  "; }
+
+/* ── MANTRAS ── */
+.mantra-grid { columns: 2; column-gap: 10mm; flex: 1; padding-top: 3mm; }
+.mantra-item { font-size: 8.5pt; font-weight: 600; line-height: 1.5; padding: 2.5mm 0; border-bottom: 0.3mm solid var(--text-dark); opacity: 0.85; break-inside: avoid; }
+.mantra-item::before { content: "· "; color: var(--accent); }
+
+/* ── BRAND DICTIONARY ── */
+.dict-grid { display: flex; gap: 10mm; flex: 1; }
+.dict-col { flex: 1; }
+.dict-label { font-size: 7pt; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 3mm; border-bottom: 0.3mm solid var(--text-dark); opacity: 0.5; padding-bottom: 1.5mm; }
+.dict-words { font-size: 7.5pt; line-height: 1.8; color: var(--gray-text); }
+
+/* ── COLOR PALETTE ── */
+.swatch-group { margin-bottom: 4mm; }
+.swatch-group-label { font-size: 5.5pt; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gray-text); margin-bottom: 2mm; opacity: 0.7; }
+.swatch-row { display: flex; gap: 3mm; }
+.swatch-item { flex: 1; }
+.swatch-block { width: 100%; border-radius: 0.5mm; }
+.swatch-hex { font-size: 6.5pt; font-weight: 700; margin-top: 1.5mm; font-variant-numeric: tabular-nums; }
+.swatch-name { font-size: 6pt; color: var(--gray-text); opacity: 0.7; }
+
+/* ── TYPOGRAPHY CARDS ── */
+.type-card { border-top: 0.8mm solid var(--text-dark); padding-top: 4mm; }
+.type-family-label { font-size: 6pt; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; opacity: 0.5; margin-bottom: 2mm; }
+.specimen-sans { font-size: 36pt; font-weight: 800; line-height: 1; letter-spacing: -0.04em; margin-bottom: 2mm; }
+.specimen-serif { font-family: var(--font-secondary); font-style: italic; font-size: 32pt; font-weight: 700; line-height: 1; letter-spacing: -0.02em; margin-bottom: 2mm; }
+.specimen-alpha { font-size: 5.5pt; line-height: 1.7; color: var(--gray-text); margin-bottom: 3mm; }
+.weight-row { display: flex; gap: 5mm; margin-bottom: 3mm; flex-wrap: wrap; }
+.w-item { display: flex; flex-direction: column; align-items: flex-start; }
+.w-sample { font-size: 9pt; }
+.w-label { font-size: 5pt; color: var(--gray-text); opacity: 0.7; margin-top: 0.5mm; }
+.type-use { font-size: 6.5pt; line-height: 1.6; color: var(--gray-text); }
+.use-chip { display: inline-block; border: 0.3mm solid var(--text-dark); padding: 1mm 2.5mm; font-size: 5pt; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; margin: 0 1.5mm 1.5mm 0; opacity: 0.6; }
+
+/* ── LOGO SECTION ── */
+.logo-display { display: flex; flex-direction: column; gap: 4mm; flex: 1.8; }
+.logo-card { flex: 1; border-radius: 1.5mm; display: flex; align-items: center; justify-content: center; }
+.logo-card img { max-height: 80%; max-width: 60%; object-fit: contain; }
+.logo-card-dark { background: var(--bg-dark); }
+.logo-card-mid { background: #3A3A3A; }
+.logo-card-light { background: var(--offwhite); }
+
+/* ── PILLAR CARDS ── */
+.pillar-grid { display: flex; gap: 5mm; flex: 1; align-items: flex-start; }
+.pillar-card { flex: 1; border-top: 0.8mm solid var(--text-dark); padding-top: 3.5mm; }
+.pillar-num { font-size: 22pt; font-weight: 800; color: var(--gray-text); opacity: 0.18; line-height: 1; margin-bottom: 1mm; letter-spacing: -0.04em; }
+.pillar-title { font-size: 9pt; font-weight: 700; letter-spacing: -0.01em; margin-bottom: 2mm; line-height: 1.2; }
+.pillar-desc { font-size: 7pt; line-height: 1.65; color: var(--gray-text); margin-bottom: 3mm; }
+.pillar-ex { font-size: 6pt; font-weight: 600; color: var(--gray-text); opacity: 0.65; line-height: 1.8; }
+.pillar-ex::before { content: "↳ "; opacity: 0.5; }
+
+/* ── VISUAL IDENTITY ── */
+.visual-rule-item { display: flex; gap: 4mm; margin-bottom: 4mm; align-items: flex-start; }
+.vr-dot { width: 5mm; height: 5mm; border-radius: 50%; background: var(--text-dark); flex-shrink: 0; margin-top: 0.5mm; }
+.vr-dot.empty { background: transparent; border: 0.4mm solid var(--text-dark); opacity: 0.4; }
+.vr-text { font-size: 7.5pt; line-height: 1.6; }
+
+/* ── CREDITS ── */
+.credits-wrap {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  text-align: center; width: 80%;
+}
+.cred-rule { width: 40mm; height: 0.3mm; background: var(--text-light); opacity: 0.2; margin: 0 auto 8mm; }
+.cred-rule2 { width: 40mm; height: 0.3mm; background: var(--text-light); opacity: 0.2; margin: 8mm auto; }
+.cred-by { font-size: 7pt; font-weight: 400; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-light); opacity: 0.4; margin-bottom: 2mm; }
+.cred-name { font-size: 22pt; font-weight: 800; color: var(--text-light); letter-spacing: -0.02em; margin-bottom: 1mm; }
+.cred-handle { font-size: 9pt; font-weight: 600; color: var(--accent); letter-spacing: 0.05em; margin-bottom: 3mm; }
+.cred-contributors { font-size: 7pt; color: var(--text-light); opacity: 0.5; line-height: 2; margin-bottom: 3mm; }
+.cred-sub { font-size: 6pt; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-light); opacity: 0.3; }
+.cred-foot {
+  position: absolute; bottom: 6mm; left: 0; right: 0; text-align: center;
+  font-size: 6pt; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-light); opacity: 0.25;
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════
+     CAPA (dark)
+     Replace: [BRAND_HANDLE], [BRAND_NAME], [ACCENT_WORD], [SUBTITLE], [YEAR]
+═══════════════════════════════════════ -->
+<div class="page dark cover">
+  <div>
+    <div class="cover-rule"></div>
+    <div class="cover-handle">@[BRAND_HANDLE]</div>
+    <div class="cover-title">Manual<br>da <span>[ACCENT_WORD]</span></div>
+    <div class="cover-sub">[Subtitle in Playfair italic — ex: Identidade · Voz · Sistema Visual]</div>
+  </div>
+  <div class="cover-footer">
+    <div>
+      <div class="cover-footer-rule"></div>
+      <div class="cover-footer-text">Manual de Marca — [BRAND_HANDLE]</div>
+    </div>
+    <div class="cover-footer-text">[YEAR]</div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════
+     001 — OPENER: Identidade & Posicionamento
+═══════════════════════════════════════ -->
+<div class="page dark opener">
+  <div class="opener-row">
+    <div class="opener-num">001</div>
+    <div class="opener-title">Identidade &amp;<br>Posicionamento</div>
+  </div>
+  <div class="opener-rule"></div>
+</div>
+
+
+<!-- ═══════════════════════════════════════
+     001a — Identidade (light)
+     Replace: body paragraphs, large positioning quote
+═══════════════════════════════════════ -->
+<div class="page light lp">
+  <div class="lp-header"><div class="lp-header-label">Manual de Marca — [BRAND_HANDLE]</div></div>
+
+  <div class="lp-body">
+    <div class="col col-narrow">
+      <div class="sec-title">[Brand name or section title]</div>
+      <div class="body-s">
+        <p>[Paragraph 1: who they are and what they do. 3–4 sentences.]</p>
+        <p>[Paragraph 2: how they work / what makes them different. 3–4 sentences.]</p>
+        <p>[Paragraph 3: tone or approach. 2–3 sentences.]</p>
+      </div>
+    </div>
+
+    <div class="col-div"></div>
+
+    <div class="col col-wide" style="justify-content:center;">
+      <div class="quote-large">"[Positioning statement — single bold sentence that defines the brand. 1–2 lines max.]"</div>
+    </div>
+  </div>
+
+  <div class="lp-footer">
+    <div class="lp-footer-l">001 — Identidade</div>
+    <div class="lp-footer-r">[YEAR] © [BRAND_HANDLE]</div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════
+     001b — Como nos definimos (light)
+     Replace: 3 short one-liner definitions in columns
+═══════════════════════════════════════ -->
+<div class="page light lp">
+  <div class="lp-header"><div class="lp-header-label">Manual de Marca — [BRAND_HANDLE]</div></div>
+
+  <div class="lp-body">
+    <div class="col col-narrow">
+      <div class="sec-title">Como nos<br>definimos</div>
+    </div>
+    <div class="col-div"></div>
+    <div style="flex:3; display:flex; gap:8mm; padding-top:2mm;">
+      <div style="flex:1; font-size:8.5pt; line-height:1.65;">[Definition 1 — 2–3 sentences. Short, direct.]</div>
+      <div style="flex:1; font-size:8.5pt; line-height:1.65;">[Definition 2 — 2–3 sentences. Short, direct.]</div>
+      <div style="flex:1; font-size:8.5pt; line-height:1.65;">[Definition 3 — 2–3 sentences. Short, direct.]</div>
+    </div>
+  </div>
+
+  <div class="lp-footer">
+    <div class="lp-footer-l">001 — Posicionamento</div>
+    <div class="lp-footer-r">[YEAR] © [BRAND_HANDLE]</div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════
+     002 — OPENER: Narrativas
+═══════════════════════════════════════ -->
+<div class="page dark opener">
+  <div class="opener-row">
+    <div class="opener-num">002</div>
+    <div class="opener-title">Narrativas<br>da Marca</div>
+  </div>
+  <div class="opener-rule"></div>
+</div>
+
+
+<!-- ═══════════════════════════════════════
+     002 — Narrativas (light)
+     Replace: 2 large audience-facing quotes
+═══════════════════════════════════════ -->
+<div class="page light lp">
+  <div class="lp-header"><div class="lp-header-label">Manual de Marca — [BRAND_HANDLE]</div></div>
+
+  <div class="lp-body" style="align-items:center;">
+    <div style="flex:1; padding-right:8mm; border-right:0.3mm solid rgba(0,0,0,0.1);">
+      <div class="quote-large">"[Key phrase 1 — main message to the audience. 2–3 lines.]"</div>
+      <div class="quote-attr">&gt; [context — ex: para nossos clientes]</div>
+    </div>
+    <div style="flex:1; padding-left:8mm;">
+      <div class="quote-large">"[Key phrase 2 — second key message. Different angle.]"</div>
+      <div class="quote-attr">&gt; [context — ex: para o mercado]</div>
+    </div>
+  </div>
+
+  <div class="lp-footer">
+    <div class="lp-footer-l">002 — Narrativas</div>
+    <div class="lp-footer-r">[YEAR] © [BRAND_HANDLE]</div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════
+     003 — OPENER: Arquétipos
+═══════════════════════════════════════ -->
+<div class="page dark opener">
+  <div class="opener-row">
+    <div class="opener-num">003</div>
+    <div class="opener-title">Arquétipos</div>
+  </div>
+  <div class="opener-rule"></div>
+</div>
+
+
+<!-- ═══════════════════════════════════════
+     003 — Arquétipos (light)
+     Replace: archetype cards. Add/remove cards as needed.
+═══════════════════════════════════════ -->
+<div class="page light lp">
+  <div class="lp-header"><div class="lp-header-label">Manual de Marca — [BRAND_HANDLE]</div></div>
+
+  <div class="lp-body">
+    <div class="col col-narrow">
+      <div class="sec-title">Arquétipos<br>de Marca</div>
+    </div>
+    <div class="col-div"></div>
+    <div class="arch-grid">
+
+      <!-- Archetype 1 — Primary -->
+      <div class="arch-card">
+        <div class="arch-badge">Primário — Dominante</div>
+        <div class="arch-name">[Archetype Name]</div>
+        <div class="arch-desc">[2–3 sentence description of how this archetype manifests in the brand.]</div>
+        <div class="arch-chips">
+          <div class="arch-chip">[Keyword 1]</div>
+          <div class="arch-chip">[Keyword 2]</div>
+          <div class="arch-chip">[Keyword 3]</div>
+          <div class="arch-chip">[Keyword 4]</div>
+        </div>
+      </div>
+
+      <!-- Archetype 2 — Primary Aspirational -->
+      <div class="arch-card">
+        <div class="arch-badge">Primário — Aspiracional</div>
+        <div class="arch-name">[Archetype Name]</div>
+        <div class="arch-desc">[2–3 sentence description.]</div>
+        <div class="arch-chips">
+          <div class="arch-chip">[Keyword 1]</div>
+          <div class="arch-chip">[Keyword 2]</div>
+          <div class="arch-chip">[Keyword 3]</div>
+        </div>
+      </div>
+
+      <!-- Archetype 3 — Secondary Trait (remove if only 2 archetypes) -->
+      <div class="arch-card">
+        <div class="arch-badge">Secundário — Traço</div>
+        <div class="arch-name">[Archetype Name]</div>
+        <div class="arch-desc">[2–3 sentence description of how this trait appears.]</div>
+        <div class="arch-chips">
+          <div class="arch-chip">[Keyword 1]</div>
+          <div class="arch-chip">[Keyword 2]</div>
+          <div class="arch-chip">[Keyword 3]</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="lp-footer">
+    <div class="lp-footer-l">003 — Arquétipos</div>
+    <div class="lp-footer-r">[YEAR] © [BRAND_HANDLE]</div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════
+     004 — OPENER: Tom de Voz
+═══════════════════════════════════════ -->
+<div class="page dark opener">
+  <div class="opener-row">
+    <div class="opener-num">004</div>
+    <div class="opener-title">Tom de Voz</div>
+  </div>
+  <div class="opener-rule"></div>
+</div>
+
+
+<!-- ═══════════════════════════════════════
+     004a — Voice Mode 1 (light)
+     Duplicate this block for each additional voice mode.
+═══════════════════════════════════════ -->
+<div class="page light lp">
+  <div class="lp-header"><div class="lp-header-label">Manual de Marca — [BRAND_HANDLE]</div></div>
+
+  <div class="lp-body">
+    <!-- Left column: title + sub + body -->
+    <div class="col" style="flex:1;">
+      <div style="font-size:8pt; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; opacity:0.4; margin-bottom:2mm;">Tom de Voz &gt; [Mode name]</div>
+      <div class="voice-sub">[3-word italic gray subtitle describing what this tone does]</div>
+      <div class="body-s" style="margin-top:3mm;">
+        <p>[Body paragraph 1: what this tone is and when to use it. 3–4 sentences.]</p>
+        <p>[Body paragraph 2: what effect it creates. 2–3 sentences.]</p>
+      </div>
+    </div>
+
+    <div class="col-div"></div>
+
+    <!-- Middle column: Direcionadores -->
+    <div class="col" style="flex:1; padding-left:2mm;">
+      <div class="voice-col-label">Direcionadores</div>
+      <ul class="voice-list">
+        <li>[Direcionador 1]</li>
+        <li>[Direcionador 2]</li>
+        <li>[Direcionador 3]</li>
+        <li>[Direcionador 4]</li>
+        <li>[Direcionador 5]</li>
+      </ul>
+    </div>
+
+    <div class="col-div"></div>
+
+    <!-- Right column: Pontos de atenção -->
+    <div class="col" style="flex:1; padding-left:2mm;">
+      <div class="voice-col-label">Pontos de atenção</div>
+      <ul class="voice-list">
+        <li>[Ponto de atenção 1]</li>
+        <li>[Ponto de atenção 2]</li>
+        <li>[Ponto de atenção 3]</li>
+        <li>[Ponto de atenção 4]</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="lp-footer">
+    <div class="lp-footer-l">004 — Tom de Voz</div>
+    <div class="lp-footer-r">[YEAR] © [BRAND_HANDLE]</div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════
+     004a Dos & Donts — Voice Mode 1 (light)
+     Duplicate for each voice mode's D&D page.
+═══════════════════════════════════════ -->
+<div class="page light lp">
+  <div class="lp-header"><div class="lp-header-label">Manual de Marca — [BRAND_HANDLE]</div></div>
+
+  <div class="lp-body">
+    <div class="col col-narrow">
+      <div class="sec-title">&gt; Dos &amp; Donts</div>
+      <div style="font-family:var(--font-secondary); font-style:italic; font-size:14pt; font-weight:700; color:var(--gray-text); margin-top:2mm;">[Voice Mode Name]</div>
+    </div>
+    <div class="col-div"></div>
+    <div class="dd-grid">
+
+      <!-- D&D pair 1 -->
+      <div class="dd-col">
+        <div class="dd-item">
+          <div class="dd-mark wrong">✗</div>
+          <div class="dd-wrong">[Wrong phrasing — what NOT to say]</div>
+          <div class="dd-mark right">✓</div>
+          <div class="dd-right">[Correct phrasing — what TO say, in bold]</div>
+          <div class="dd-arrow">[Explanation of why the second version is better]</div>
+          <div class="dd-arrow">[Second explanation if needed]</div>
+        </div>
+      </div>
+
+      <!-- D&D pair 2 -->
+      <div class="dd-col">
+        <div class="dd-item">
+          <div class="dd-mark wrong">✗</div>
+          <div class="dd-wrong">[Wrong phrasing]</div>
+          <div class="dd-mark right">✓</div>
+          <div class="dd-right">[Correct phrasing]</div>
+          <div class="dd-arrow">[Explanation]</div>
+        </div>
+      </div>
+
+      <!-- D&D pair 3 -->
+      <div class="dd-col">
+        <div class="dd-item">
+          <div class="dd-mark wrong">✗</div>
+          <div class="dd-wrong">[Wrong phrasing]</div>
+          <div class="dd-mark right">✓</div>
+          <div class="dd-right">[Correct phrasing]</div>
+          <div class="dd-arrow">[Explanation]</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="lp-footer">
+    <div class="lp-footer-l">004 — Tom de Voz</div>
+    <div class="lp-footer-r">[YEAR] © [BRAND_HANDLE]</div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════
+     005 — OPENER: Mantras & Dicionário
+═══════════════════════════════════════ -->
+<div class="page dark opener">
+  <div class="opener-row">
+    <div class="opener-num">005</div>
+    <div class="opener-title">Mantras &amp;<br>Dicionário</div>
+  </div>
+  <div class="opener-rule"></div>
+</div>
+
+
+<!-- ═══════════════════════════════════════
+     005 — Mantras & Dicionário (light)
+═══════════════════════════════════════ -->
+<div class="page light lp">
+  <div class="lp-header"><div class="lp-header-label">Manual de Marca — [BRAND_HANDLE]</div></div>
+
+  <div class="lp-body">
+    <div class="col" style="flex:1.3;">
+      <div class="sec-title">Mantras</div>
+      <div class="mantra-grid">
+        <div class="mantra-item">[Mantra 1]</div>
+        <div class="mantra-item">[Mantra 2]</div>
+        <div class="mantra-item">[Mantra 3]</div>
+        <div class="mantra-item">[Mantra 4]</div>
+        <div class="mantra-item">[Mantra 5]</div>
+        <div class="mantra-item">[Mantra 6]</div>
+        <div class="mantra-item">[Mantra 7]</div>
+        <div class="mantra-item">[Mantra 8]</div>
+        <div class="mantra-item">[Mantra 9]</div>
+        <div class="mantra-item">[Mantra 10]</div>
+      </div>
+    </div>
+
+    <div class="col-div"></div>
+
+    <div class="col" style="flex:1; padding-left:4mm;">
+      <div class="sec-title">Dicionário da Marca</div>
+      <div class="dict-grid">
+        <div class="dict-col">
+          <div class="dict-label">Palavras preferidas</div>
+          <div class="dict-words">[word 1] / [word 2] / [word 3] / [word 4] / [word 5] / [word 6] / [word 7] / [word 8]</div>
+        </div>
+        <div class="dict-col">
+          <div class="dict-label">Termos proprietários</div>
+          <div class="dict-words">[term 1] / [term 2] / [term 3] / [term 4] / [term 5]</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="lp-footer">
+    <div class="lp-footer-l">005 — Mantras &amp; Dicionário</div>
+    <div class="lp-footer-r">[YEAR] © [BRAND_HANDLE]</div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════
+     006 — OPENER: Paleta de Cores
+═══════════════════════════════════════ -->
+<div class="page dark opener">
+  <div class="opener-row">
+    <div class="opener-num">006</div>
+    <div class="opener-title">Paleta de Cores</div>
+  </div>
+  <div class="opener-rule"></div>
+</div>
+
+
+<!-- ═══════════════════════════════════════
+     006 — Paleta (light)
+     Add/remove swatch groups as needed.
+═══════════════════════════════════════ -->
+<div class="page light lp">
+  <div class="lp-header"><div class="lp-header-label">Manual de Marca — [BRAND_HANDLE]</div></div>
+
+  <div class="lp-body">
+    <div class="col" style="flex:1.4;">
+      <div class="sec-title">Paleta de Cores</div>
+
+      <!-- Group 1: Tríade Principal -->
+      <div class="swatch-group">
+        <div class="swatch-group-label">Tríade Principal</div>
+        <div class="swatch-row">
+          <div class="swatch-item">
+            <div class="swatch-block" style="background:#[HEX1]; height:15mm;"></div>
+            <div class="swatch-hex">#[HEX1]</div>
+            <div class="swatch-name">[Color name 1]</div>
+          </div>
+          <div class="swatch-item">
+            <div class="swatch-block" style="background:#[HEX2]; height:15mm;"></div>
+            <div class="swatch-hex">#[HEX2]</div>
+            <div class="swatch-name">[Color name 2]</div>
+          </div>
+          <div class="swatch-item">
+            <div class="swatch-block" style="background:#[HEX3]; height:15mm;"></div>
+            <div class="swatch-hex">#[HEX3]</div>
+            <div class="swatch-name">[Signature/Accent]</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Group 2: Support (add Cor Institucional group here if brand has one) -->
+      <div class="swatch-group">
+        <div class="swatch-group-label">Suporte</div>
+        <div class="swatch-row">
+          <div class="swatch-item">
+            <div class="swatch-block" style="background:#[HEX4]; height:10mm;"></div>
+            <div class="swatch-hex">#[HEX4]</div>
+            <div class="swatch-name">[Color name 4]</div>
+          </div>
+          <div class="swatch-item">
+            <div class="swatch-block" style="background:#[HEX5]; height:10mm;"></div>
+            <div class="swatch-hex">#[HEX5]</div>
+            <div class="swatch-name">[Color name 5]</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Group 3: Apoio (optional) -->
+      <div class="swatch-group">
+        <div class="swatch-group-label">Apoio Pontual</div>
+        <div class="swatch-row">
+          <div class="swatch-item">
+            <div class="swatch-block" style="background:#[HEX6]; height:7mm;"></div>
+            <div class="swatch-hex">#[HEX6]</div>
+            <div class="swatch-name">[Color name 6]</div>
+          </div>
+          <div class="swatch-item">
+            <div class="swatch-block" style="background:#[HEX7]; height:7mm;"></div>
+            <div class="swatch-hex">#[HEX7]</div>
+            <div class="swatch-name">[Color name 7]</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-div"></div>
+
+    <div class="col" style="justify-content:center; padding-left:4mm;">
+      <div class="sec-title" style="margin-bottom:5mm;">Como usar</div>
+      <div class="body-s">
+        <p><strong>[Color 1 + Color 2]</strong> [explain their role in the system — backgrounds, text, etc.]</p>
+        <p><strong>[Signature color]</strong> [explain when and how to use the accent — reserve rule, never as background, etc.]</p>
+        <p><strong>[Support color]</strong> [explain support role — gradients, shadows, etc.]</p>
+        <p style="opacity:0.6;">[General note on accent colors — campaign use, not fixed system, etc.]</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="lp-footer">
+    <div class="lp-footer-l">006 — Paleta de Cores</div>
+    <div class="lp-footer-r">[YEAR] © [BRAND_HANDLE]</div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════
+     007 — OPENER: Tipografia
+═══════════════════════════════════════ -->
+<div class="page dark opener">
+  <div class="opener-row">
+    <div class="opener-num">007</div>
+    <div class="opener-title">Tipografia</div>
+  </div>
+  <div class="opener-rule"></div>
+</div>
+
+
+<!-- ═══════════════════════════════════════
+     007 — Tipografia (light)
+═══════════════════════════════════════ -->
+<div class="page light lp">
+  <div class="lp-header"><div class="lp-header-label">Manual de Marca — [BRAND_HANDLE]</div></div>
+
+  <div class="lp-body">
+    <div class="type-card col" style="flex:1.2;">
+      <div class="type-family-label">[PRIMARY_FONT_NAME] — Fonte Primária</div>
+      <div class="specimen-sans">Aa Bb Cc</div>
+      <div class="specimen-alpha">A B C D E F G H I J K L M N O P Q R S T U V W X Y Z<br>a b c d e f g h i j k l m n o p q r s t u v w x y z · 0 1 2 3 4 5 6 7 8 9</div>
+      <div class="weight-row">
+        <div class="w-item"><span class="w-sample" style="font-weight:300;">Light</span><span class="w-label">300</span></div>
+        <div class="w-item"><span class="w-sample" style="font-weight:400;">Regular</span><span class="w-label">400</span></div>
+        <div class="w-item"><span class="w-sample" style="font-weight:600;">SemiBold</span><span class="w-label">600</span></div>
+        <div class="w-item"><span class="w-sample" style="font-weight:700;">Bold</span><span class="w-label">700</span></div>
+        <div class="w-item"><span class="w-sample" style="font-weight:800;">ExtraBold</span><span class="w-label">800</span></div>
+        <div class="w-item"><span class="w-sample" style="font-weight:900;">Black</span><span class="w-label">900</span></div>
+      </div>
+      <div class="type-use">
+        <span class="use-chip">Headlines</span>
+        <span class="use-chip">Títulos de post</span>
+        <span class="use-chip">Body</span>
+        <span class="use-chip">Labels</span><br>
+        [Usage rule for primary font — weights used for what purpose.]
+      </div>
+    </div>
+
+    <div class="col-div"></div>
+
+    <div class="type-card col" style="flex:1;">
+      <div class="type-family-label">[SECONDARY_FONT_NAME] — Fonte Secundária</div>
+      <div class="specimen-serif">Aa Bb Cc</div>
+      <div class="specimen-alpha" style="font-family:var(--font-secondary); font-style:italic;">
+        A B C D E F G H I J K L M N O P Q R S T<br>
+        a b c d e f g h i j k l m n o p q r s t · 0–9
+      </div>
+      <div class="weight-row">
+        <div class="w-item"><span class="w-sample" style="font-family:var(--font-secondary);font-style:italic;font-weight:400;">Italic</span><span class="w-label">400i</span></div>
+        <div class="w-item"><span class="w-sample" style="font-family:var(--font-secondary);font-style:italic;font-weight:700;">Bold Italic</span><span class="w-label">700i</span></div>
+      </div>
+      <div class="type-use">
+        <span class="use-chip">Palavras-chave</span>
+        <span class="use-chip">Destaques</span>
+        <span class="use-chip">Citações</span><br>
+        [Usage rule for secondary font — always italic, accent color words, etc.]
+      </div>
+    </div>
+  </div>
+
+  <div class="lp-footer">
+    <div class="lp-footer-l">007 — Tipografia</div>
+    <div class="lp-footer-r">[YEAR] © [BRAND_HANDLE]</div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════
+     008 — OPENER: Logotipo
+     REMOVE this and the next page if no logo is provided.
+═══════════════════════════════════════ -->
+<div class="page dark opener">
+  <div class="opener-row">
+    <div class="opener-num">008</div>
+    <div class="opener-title">Logotipo</div>
+  </div>
+  <div class="opener-rule"></div>
+</div>
+
+
+<!-- ═══════════════════════════════════════
+     008 — Logotipo (light)
+     REMOVE if no logo. Replace [LOGO_PATH] with actual image path.
+═══════════════════════════════════════ -->
+<div class="page light lp">
+  <div class="lp-header"><div class="lp-header-label">Manual de Marca — [BRAND_HANDLE]</div></div>
+
+  <div class="lp-body">
+    <div class="col col-narrow">
+      <div class="sec-title">Logotipo</div>
+      <div class="body-s" style="margin-top:4mm;">
+        <p>[Description of the logo and its primary use. 2–3 sentences.]</p>
+      </div>
+    </div>
+
+    <div class="col-div"></div>
+
+    <div class="logo-display" style="flex:2;">
+      <div class="logo-card logo-card-dark" style="flex:1; min-height:30mm;">
+        <img src="[LOGO_PATH]" alt="Logo" style="filter:brightness(10);">
+      </div>
+      <div class="logo-card logo-card-light" style="flex:1; min-height:30mm;">
+        <img src="[LOGO_PATH]" alt="Logo">
+      </div>
+    </div>
+  </div>
+
+  <div class="lp-footer">
+    <div class="lp-footer-l">008 — Logotipo</div>
+    <div class="lp-footer-r">[YEAR] © [BRAND_HANDLE]</div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════
+     009 — OPENER: Pilares de Conteúdo
+═══════════════════════════════════════ -->
+<div class="page dark opener">
+  <div class="opener-row">
+    <div class="opener-num">009</div>
+    <div class="opener-title">Pilares de<br>Conteúdo</div>
+  </div>
+  <div class="opener-rule"></div>
+</div>
+
+
+<!-- ═══════════════════════════════════════
+     009 — Pilares (light)
+     Add/remove pillar cards (3–5 recommended).
+═══════════════════════════════════════ -->
+<div class="page light lp">
+  <div class="lp-header"><div class="lp-header-label">Manual de Marca — [BRAND_HANDLE]</div></div>
+
+  <div class="lp-body">
+    <div class="col col-narrow">
+      <div class="sec-title">Pilares de<br>Conteúdo</div>
+    </div>
+    <div class="col-div"></div>
+    <div class="pillar-grid">
+
+      <div class="pillar-card">
+        <div class="pillar-num">01</div>
+        <div class="pillar-title">[Pillar 1 Title]</div>
+        <div class="pillar-desc">[2-sentence description of this content pillar and its purpose.]</div>
+        <div class="pillar-ex">[Example topic 1]</div>
+        <div class="pillar-ex">[Example topic 2]</div>
+      </div>
+
+      <div class="pillar-card">
+        <div class="pillar-num">02</div>
+        <div class="pillar-title">[Pillar 2 Title]</div>
+        <div class="pillar-desc">[2-sentence description.]</div>
+        <div class="pillar-ex">[Example topic 1]</div>
+        <div class="pillar-ex">[Example topic 2]</div>
+      </div>
+
+      <div class="pillar-card">
+        <div class="pillar-num">03</div>
+        <div class="pillar-title">[Pillar 3 Title]</div>
+        <div class="pillar-desc">[2-sentence description.]</div>
+        <div class="pillar-ex">[Example topic 1]</div>
+        <div class="pillar-ex">[Example topic 2]</div>
+      </div>
+
+      <div class="pillar-card">
+        <div class="pillar-num">04</div>
+        <div class="pillar-title">[Pillar 4 Title]</div>
+        <div class="pillar-desc">[2-sentence description.]</div>
+        <div class="pillar-ex">[Example topic 1]</div>
+        <div class="pillar-ex">[Example topic 2]</div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="lp-footer">
+    <div class="lp-footer-l">009 — Pilares de Conteúdo</div>
+    <div class="lp-footer-r">[YEAR] © [BRAND_HANDLE]</div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════
+     010 — OPENER: Estilo Visual
+═══════════════════════════════════════ -->
+<div class="page dark opener">
+  <div class="opener-row">
+    <div class="opener-num">010</div>
+    <div class="opener-title">Estilo Visual</div>
+  </div>
+  <div class="opener-rule"></div>
+</div>
+
+
+<!-- ═══════════════════════════════════════
+     010 — Estilo Visual (light)
+═══════════════════════════════════════ -->
+<div class="page light lp">
+  <div class="lp-header"><div class="lp-header-label">Manual de Marca — [BRAND_HANDLE]</div></div>
+
+  <div class="lp-body">
+    <div class="col col-narrow">
+      <div class="sec-title">Estilo Visual</div>
+      <div class="body-s">
+        <p><strong>[Visual quality 1].</strong> [2-sentence description of the brand's visual aesthetic and cinematographic/editorial approach.]</p>
+        <p><strong>[Visual quality 2].</strong> [2-sentence description of photography or imagery style.]</p>
+        <p><strong>[Visual quality 3].</strong> [2-sentence description of color system or contrast approach.]</p>
+        <p><strong>[Visual quality 4].</strong> [2-sentence description of typography in context or brand mark usage.]</p>
+      </div>
+    </div>
+
+    <div class="col-div"></div>
+
+    <div class="col col-wide" style="padding-left:4mm;">
+      <div class="sec-title">Regras de Aplicação</div>
+      <div class="visual-rule-item">
+        <div class="vr-dot"></div>
+        <div class="vr-text"><strong>[Rule 1 title].</strong> [Rule 1 explanation. 2 sentences.]</div>
+      </div>
+      <div class="visual-rule-item">
+        <div class="vr-dot empty"></div>
+        <div class="vr-text"><strong>[Rule 2 title].</strong> [Rule 2 explanation.]</div>
+      </div>
+      <div class="visual-rule-item">
+        <div class="vr-dot"></div>
+        <div class="vr-text"><strong>[Rule 3 title].</strong> [Rule 3 explanation.]</div>
+      </div>
+      <div class="visual-rule-item">
+        <div class="vr-dot empty"></div>
+        <div class="vr-text"><strong>[Rule 4 title].</strong> [Rule 4 explanation.]</div>
+      </div>
+      <div class="visual-rule-item">
+        <div class="vr-dot"></div>
+        <div class="vr-text"><strong>[Rule 5 title].</strong> [Rule 5 explanation.]</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="lp-footer">
+    <div class="lp-footer-l">010 — Estilo Visual</div>
+    <div class="lp-footer-r">[YEAR] © [BRAND_HANDLE]</div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════
+     CRÉDITOS (dark)
+     Always the last page. Never remove.
+═══════════════════════════════════════ -->
+<div class="page dark" style="position:relative;">
+  <div class="credits-wrap">
+    <div class="cred-rule"></div>
+    <div class="cred-by">Manual criado por</div>
+    <div class="cred-name">Higor Manoel</div>
+    <div class="cred-handle">@higormanoeldesign</div>
+    <div class="cred-rule2"></div>
+    <!-- Add contributor lines below if any were provided -->
+    <!-- <div class="cred-contributors">[Contributor Name] — [Role]<br>[Contributor Name] — [Role]</div> -->
+    <div class="cred-sub">Designer · Estratégia de Marca · IA Aplicada</div>
+  </div>
+  <div class="cred-foot">Manual da Marca — @[BRAND_HANDLE] · [YEAR]</div>
+</div>
+
+</body>
+</html>

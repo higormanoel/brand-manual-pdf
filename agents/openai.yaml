@@ -1,0 +1,4 @@
+interface:
+  display_name: "Brand Manual PDF"
+  short_description: "Create complete brand guidelines PDFs"
+  default_prompt: "Create a brand manual PDF for my brand"
