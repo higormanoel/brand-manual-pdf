@@ -45,7 +45,9 @@ declare global {
     };
   }
 }
-export function mountReviewStudio() {
+export function mountReviewStudio({
+  fractionalQuad = false,
+}: { fractionalQuad?: boolean } = {}) {
   const project = createProject("Revisão do editor");
   project.assets = [
     "scene-a",
@@ -137,6 +139,10 @@ export function mountReviewStudio() {
       ],
     },
   ];
+  if (fractionalQuad) {
+    const node = project.pages[0].nodes.find((node) => node.id === "planar");
+    if (node?.type === "mockup") node.quad![0].y = 100.123456789;
+  }
   const state = (window.reviewStudio = {
     project,
     batches: [] as CommandBatch[],

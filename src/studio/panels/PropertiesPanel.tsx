@@ -51,6 +51,7 @@ export function NumberField({
         onBlur={(e) => {
           const number = e.target.valueAsNumber;
           if (
+            draft !== null &&
             Number.isFinite(number) &&
             (min === undefined || number >= min) &&
             (max === undefined || number <= max) &&

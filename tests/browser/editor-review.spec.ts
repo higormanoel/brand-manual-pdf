@@ -297,3 +297,28 @@ test("hides descendant selection overlay when the parent is hidden", async ({
     0,
   );
 });
+
+test("does not round untouched fractional perspective coordinates when applying a different coordinate", async ({
+  page,
+}) => {
+  await page.goto("/?render-proof");
+  await page.evaluate(async () => {
+    const { mountReviewStudio } = await import(
+      /* @vite-ignore */ "/tests/studio/reviewHarness.tsx" as string
+    );
+    mountReviewStudio({ fractionalQuad: true });
+  });
+  await select(page, "planar");
+  await number(page, "Canto superior esquerdo X", 80);
+  await page
+    .getByRole("button", { name: "Aplicar perspectiva", exact: true })
+    .click();
+  expect(
+    await page.evaluate(() => {
+      const node = window.reviewStudio.project.pages[0].nodes.find(
+        (n) => n.id === "planar",
+      );
+      return node?.type === "mockup" ? node.quad![0].y : undefined;
+    }),
+  ).toBe(100.123456789);
+});
