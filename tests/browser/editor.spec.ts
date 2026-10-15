@@ -1,8 +1,17 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
+async function mountEditor(page: Page) {
+  await page.goto("/?render-proof");
+  await page.evaluate(async () => {
+    const { mountMemoryStudio } = await import(
+      /* @vite-ignore */ "/tests/studio/memoryHarness.tsx" as string
+    );
+    await mountMemoryStudio();
+  });
+}
 test("edits actual artboard objects with history, zoom, pages and typography", async ({
   page,
 }) => {
-  await page.goto("/");
+  await mountEditor(page);
   await expect(page.getByRole("banner")).toContainText("Marquio");
   await page
     .getByRole("button", { name: "Inserir texto", exact: true })
@@ -66,7 +75,7 @@ test("edits actual artboard objects with history, zoom, pages and typography", a
 test("resizes and moves at 125%, groups contiguous layers and keeps paint order through undo", async ({
   page,
 }) => {
-  await page.goto("/");
+  await mountEditor(page);
   await page
     .getByRole("button", { name: "Adicionar página", exact: true })
     .click();
@@ -153,7 +162,7 @@ test("resizes and moves at 125%, groups contiguous layers and keeps paint order 
 test("imports original image bytes, edits crop and retains asset and previous undo", async ({
   page,
 }) => {
-  await page.goto("/");
+  await mountEditor(page);
   await page
     .getByRole("button", { name: "Adicionar página", exact: true })
     .click();
@@ -202,7 +211,7 @@ test("imports original image bytes, edits crop and retains asset and previous un
 test("edits generated footer and page background, and captures desktop, narrow and mobile", async ({
   page,
 }, testInfo) => {
-  await page.goto("/");
+  await mountEditor(page);
   await page.getByRole("button", { name: "Camadas", exact: true }).click();
   await page.getByRole("button", { name: /Camada page-number/ }).click();
   await page.getByRole("button", { name: "Propriedades", exact: true }).click();
@@ -297,7 +306,7 @@ test("retains conflict edits and confirms undo at a new revision without resetti
 test("changes page background, reorders and deletes pages, then exports acknowledged original bytes", async ({
   page,
 }) => {
-  await page.goto("/");
+  await mountEditor(page);
   await expect(page.locator(".page-thumbnail").first()).toBeVisible();
   const initial = await page.locator(".page-thumbnail").count();
   await page
@@ -329,7 +338,7 @@ test("changes page background, reorders and deletes pages, then exports acknowle
 test("generates a new proposal and appends it only after explicit choice", async ({
   page,
 }) => {
-  await page.goto("/");
+  await mountEditor(page);
   await expect(page.locator(".page-thumbnail").first()).toBeVisible();
   const initial = await page.locator(".page-thumbnail").count();
   await page
@@ -363,7 +372,7 @@ test("generates a new proposal and appends it only after explicit choice", async
 test("intake direct typing is used by generation in the real App", async ({
   page,
 }) => {
-  await page.goto("/");
+  await mountEditor(page);
   await page.getByRole("button", { name: "Briefing", exact: true }).click();
   await page
     .getByLabel("Nome da marca", { exact: true })
@@ -387,7 +396,7 @@ test("intake direct typing is used by generation in the real App", async ({
 test("imports a real included photographic scene and full artwork, inserts approved editable application", async ({
   page,
 }, testInfo) => {
-  await page.goto("/");
+  await mountEditor(page);
   await page
     .getByRole("button", { name: "Adicionar página", exact: true })
     .click();
@@ -438,7 +447,7 @@ test("imports a real included photographic scene and full artwork, inserts appro
 test("distributes objects, moves numeric multi-selection and preserves layer order on front/back actions", async ({
   page,
 }) => {
-  await page.goto("/");
+  await mountEditor(page);
   await page
     .getByRole("button", { name: "Adicionar página", exact: true })
     .click();
@@ -493,7 +502,7 @@ test("distributes objects, moves numeric multi-selection and preserves layer ord
 test("pans with space and toggles grid, guides and snapping without typing-field shortcuts", async ({
   page,
 }) => {
-  await page.goto("/");
+  await mountEditor(page);
   await page
     .getByRole("button", { name: "Adicionar página", exact: true })
     .click();

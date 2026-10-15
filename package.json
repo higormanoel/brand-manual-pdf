@@ -10,7 +10,7 @@
     "dev": "vite --host 127.0.0.1",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "build": "tsc --noEmit && vite build",
+    "build": "tsc --noEmit && vite build && vite build --config vite.node.config.ts",
     "test:e2e": "playwright test"
   },
   "dependencies": {
@@ -19,7 +19,8 @@
     "pdf-lib": "^1.17.1",
     "react": "19.3.1",
     "react-dom": "19.3.1",
-    "zod": "4.6.7"
+    "zod": "4.6.7",
+    "playwright": "1.64.1"
   },
   "devDependencies": {
     "@playwright/test": "^1.64.1",
@@ -33,5 +34,29 @@
     "typescript": "5.9.3",
     "vite": "6.4.4",
     "vitest": "4.1.11"
-  }
+  },
+  "bin": {
+    "marquio": "bin/marquio.mjs"
+  },
+  "files": [
+    "bin/",
+    "dist/",
+    "src/",
+    "integrations/",
+    "agents/",
+    "SKILL.md",
+    "legacy/",
+    "assets/template_brand_manual.html",
+    "scripts/generate_pdf.sh",
+    "fixtures/",
+    "public/",
+    "README*",
+    "CONTRIBUTING.md",
+    "SECURITY.md",
+    "CHANGELOG.md",
+    "LICENSE",
+    "THIRD_PARTY_NOTICES.md",
+    "docs/assets/",
+    "examples/"
+  ]
 }

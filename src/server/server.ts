@@ -3,6 +3,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { z } from 'zod';
 import { ProjectRepository, RepositoryError, type RepositoryOptions } from '../storage/repository';
+import { pdfBytes } from '../export/pdf';
 import { exportPortable } from '../storage/portable';
 import { MAX_ASSET_BYTES, MAX_PROJECT_BYTES } from '../storage/snapshot';
 import { relativeAssetPathSchema } from '../core/assets';
@@ -31,7 +32,7 @@ export async function startLocalServer(options: LocalServerOptions): Promise<Loc
   const staticDir = options.staticDir ?? path.resolve('dist/studio');
   const server = http.createServer((request, response) => {
     response.setHeader('Cache-Control', 'no-store'); response.setHeader('X-Content-Type-Options', 'nosniff'); response.setHeader('Referrer-Policy', 'no-referrer');
-    response.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data: blob:; connect-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'none'");
+    response.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data: blob:; connect-src 'self'; object-src 'none'; frame-src 'self' blob:; frame-ancestors 'none'; base-uri 'none'");
     void (async () => {
       session.validateBoundary(request);
       // Validate before URL normalization can hide traversal segments.
@@ -60,6 +61,7 @@ export async function startLocalServer(options: LocalServerOptions): Promise<Loc
           for (const [name, bytes] of Object.entries(snapshot.assets)) assets[name] = Buffer.from(bytes).toString('base64');
           json(response, 200, { revision: snapshot.revision, project: snapshot.project, assetsBase64: assets }); return;
         }
+        if (url.pathname === '/api/pdf' && request.method === 'GET') { const result = await pdfBytes(await repository.snapshot(revision(url))); response.writeHead(200, { 'Content-Type': 'application/pdf', 'X-Marquio-Revision': String(result.report.revision), 'X-Marquio-Pages': String(result.report.pages) }); response.end(result.bytes); return; }
         if (url.pathname === '/api/portable' && request.method === 'GET') { const bytes = await exportPortable(await repository.snapshot(revision(url))); response.writeHead(200, { 'Content-Type': 'application/zip', 'Content-Disposition': 'attachment; filename="project.marquio.zip"' }); response.end(bytes); return; }
         throw new SessionError(404, 'API route not found');
       }
