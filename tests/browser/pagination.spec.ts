@@ -1,0 +1,81 @@
+import { test, expect } from '@playwright/test';
+import { writeFileSync } from 'node:fs';
+
+test('continues complete text using uploaded font metrics and leaves prior edited variants intact', async ({ page }, info) => {
+  await page.goto('/?render-proof');
+  await expect(page.locator('[data-render-ready="true"]')).toBeVisible();
+  const proof = await page.evaluate(async () => {
+    const { createProject, parseProject } = await import(/* @vite-ignore */ '/src/core/project.ts' as string);
+    const { generateManual } = await import(/* @vite-ignore */ '/src/editorial/generate.ts' as string);
+    const { measureText, textCSS } = await import(/* @vite-ignore */ '/src/render/textMeasurement.ts' as string);
+    const face = new FontFace('Uploaded Editorial Proof', 'url(/node_modules/@fontsource/inter/files/inter-latin-400-normal.woff2)');
+    await face.load(); document.fonts.add(face);
+    const project = createProject('Presença');
+    project.editorial.bodyFontFamily = '"Uploaded Editorial Proof", sans-serif';
+    const source = project.sections.find((s: { kind: string }) => s.kind === 'brand-strategy');
+    const text = ('Uma pausa no café: presença, atenção e espaço. 👩🏽‍💻 cafe\u0301.\n\n').repeat(300);
+    source.content = { paragraphs: [text], rules: [], assetIds: [], colorIds: [], typographyIds: [] };
+    const result = await generateManual(project, { measureText, variantId: 'first' });
+    project.pages = structuredClone(result.sections.flatMap((s: { pages: unknown[] }) => s.pages));
+    project.pages[0].nodes[0].manuallyEdited = true;
+    const before = JSON.stringify(project);
+    const next = await generateManual(project, { measureText, variantId: 'second' });
+    parseProject({ ...project, pages: next.sections.flatMap((s: { pages: unknown[] }) => s.pages) });
+    const continuation = result.sections.find((s: { sectionId: string }) => s.sectionId === source.id).pages.filter((p: { nodes: { name: string }[] }) => p.nodes.some(n => n.name.startsWith('body-')));
+    const preserved = continuation.flatMap((p: { nodes: { type: string; name: string; text: string }[] }) => p.nodes.filter(n => n.type === 'text' && n.name.startsWith('body-')).map(n => n.text)).join('');
+    const errors: string[] = [];
+    const root = document.createElement('div'); root.id = 'pagination-proof'; document.body.replaceChildren(root);
+    for (const p of continuation) {
+      const artboard = document.createElement('section');
+      Object.assign(artboard.style, { width: '1920px', height: '1080px', position: 'relative', background: p.background }); root.append(artboard);
+      for (const n of p.nodes) {
+        if (n.type !== 'text') continue;
+        const m = await measureText({ text: n.text, style: n.style, width: n.transform.width, height: n.transform.height });
+        if (m.overflow || !m.fontAvailable) errors.push(n.id);
+        if (n.name.startsWith('body-') && (n.transform.y < 220 || n.transform.y + n.transform.height > 940)) errors.push(`collision:${n.id}`);
+        const el = document.createElement('div'); el.textContent = n.text;
+        Object.assign(el.style, textCSS(n.style), { position: 'absolute', left: `${n.transform.x}px`, top: `${n.transform.y}px`, width: `${n.transform.width}px`, height: `${n.transform.height}px`, fontSize: `${n.style.fontSize}px`, letterSpacing: `${n.style.letterSpacing}px` }); artboard.append(el);
+        if (el.scrollHeight > el.clientHeight + .5 || el.scrollWidth > el.clientWidth + .5) errors.push(`dom-overflow:${n.id}`);
+      }
+    }
+    return { sameText: preserved === text, pages: continuation.length, errors, unchanged: JSON.stringify(project) === before, oldIds: result.sections.flatMap((s: { pages: { id: string }[] }) => s.pages.map(p => p.id)), newIds: next.sections.flatMap((s: { pages: { id: string }[] }) => s.pages.map(p => p.id)) };
+  });
+  expect(proof.sameText).toBe(true);
+  expect(proof.pages).toBeGreaterThan(2);
+  expect(proof.errors).toEqual([]);
+  expect(proof.unchanged).toBe(true);
+  expect(proof.oldIds.filter((id: string) => proof.newIds.includes(id))).toEqual([]);
+  writeFileSync(info.outputPath('pagination-proof.json'), JSON.stringify(proof, null, 2));
+  await page.locator('#pagination-proof > section').first().screenshot({ path: info.outputPath('pagination-first.png') });
+});
+
+test('renders the full fictitious fixture through shared Artboard with all live text inside its boxes', async ({ page }, info) => {
+  await page.goto('/?render-proof');
+  await expect(page.locator('[data-render-ready="true"]')).toBeVisible();
+  const result = await page.evaluate(async () => {
+    const { parseProject } = await import(/* @vite-ignore */ '/src/core/project.ts' as string);
+    const { generateManual } = await import(/* @vite-ignore */ '/src/editorial/generate.ts' as string);
+    const { measureText } = await import(/* @vite-ignore */ '/src/render/textMeasurement.ts' as string);
+    const { preflight } = await import(/* @vite-ignore */ '/src/render/preflight.ts' as string);
+    const { renderManualProof } = await import(/* @vite-ignore */ '/tests/editorial/browserProof.tsx' as string);
+    const project = parseProject(await (await fetch('/fixtures/aurora/project.json')).json());
+    const generated = await generateManual(project, { measureText, variantId: 'fixture-proof' });
+    const pages = generated.sections.flatMap((s: { pages: unknown[] }) => s.pages);
+    const document = parseProject({ ...project, pages });
+    const measurements: Record<string, unknown> = {};
+    for (const p of document.pages) for (const n of p.nodes) if (n.type === 'text') measurements[n.id] = await measureText({ text: n.text, style: n.style, width: n.transform.width, height: n.transform.height });
+    await renderManualProof(project, pages);
+    return { pages: pages.length, nodes: pages.reduce((n: number, p: { nodes: unknown[] }) => n + p.nodes.length, 0), diagnostics: [...generated.diagnostics, ...preflight(document, measurements)] };
+  });
+  expect(result.pages).toBeGreaterThan(15);
+  expect(result.diagnostics).toEqual([]);
+  const overflow = await page.locator('[data-text-content]').evaluateAll(elements => elements.flatMap(element => {
+    const node = element.closest('[data-node-id]') as HTMLElement;
+    const e = element as HTMLElement;
+    return e.scrollHeight > node.clientHeight + .5 || e.scrollWidth > node.clientWidth + .5 ? [node.dataset.nodeId] : [];
+  }));
+  expect(overflow).toEqual([]);
+  await expect(page.locator('[data-node-type="image"] img')).toHaveCount(5);
+  writeFileSync(info.outputPath('fixture-metrics.json'), JSON.stringify(result, null, 2));
+  await page.locator('#editorial-contact-sheet').screenshot({ path: info.outputPath('aurora-contact-sheet.png') });
+});

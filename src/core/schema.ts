@@ -71,7 +71,9 @@ export const brandDataSchema = z.object({
   mantras: z.array(z.string()).default([]),
   dictionary: z.array(z.object({ term: z.string(), meaning: z.string(), usage: z.string().optional() })).default([]),
   voice: z.object({ traits: z.array(z.string()), do: z.array(z.string()), avoid: z.array(z.string()), sample: z.string().optional(),
-    modes: z.array(z.object({ id: idSchema, name: z.string(), description: z.string().optional(), do: z.array(z.string()), dont: z.array(z.string()) })).default([]),
+    modes: z.array(z.object({ id: idSchema, name: z.string(), description: z.string().optional(), do: z.array(z.string()), dont: z.array(z.string()),
+      examples: z.array(z.object({ wrong: z.string(), right: z.string(), explanation: z.string().optional() })).optional(),
+    })).default([]),
   }).optional(),
 });
 export type BrandData = z.infer<typeof brandDataSchema>;
