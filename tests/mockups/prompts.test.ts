@@ -71,6 +71,13 @@ describe('mockup prompt preparation', () => {
     expect(portrait.prompt).not.toContain('generic synthetic adult');
   });
 
+  it('keeps supplied scene instructions separate from blank-scene generation', () => {
+    const result = resolveMockupPrompt('laptop', assets);
+    expect(result.prompt).toContain('Keep the remaining scene consistent');
+    expect(result.prompt).not.toContain('Produce a new scene');
+    expect(result.prompt).not.toContain('No branding, no invented lettering');
+  });
+
   it('rejects unknown preset ids instead of silently preparing another scene', () => {
     expect(() => resolveMockupPrompt('unknown', assets)).toThrow(/Preset/);
   });

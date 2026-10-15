@@ -52,7 +52,7 @@ export function resolveMockupPrompt(presetId: string, inputs: MockupPromptInputs
     missingInputs.push({ id: 'palette', label: 'Informe as cores fornecidas ou remova a paleta opcional.', kind: 'text' });
   const result: ResolvedPrompt = { presetId, presetVersion: preset.version, mode, status: missingInputs.length ? 'missing-inputs' : 'ready', usedAssetIds: [], missingInputs };
   if (missingInputs.length) return result;
-  const direction = sceneDirection(preset, inputs);
+  const direction = sceneDirection(preset, inputs, mode === 'scene');
   if (mode === 'scene') return { ...result, prompt: direction };
 
   const selected = [inputs.sceneAsset, inputs.artworkAsset, inputs.logoAsset,
@@ -71,17 +71,17 @@ export function resolveMockupPrompt(presetId: string, inputs: MockupPromptInputs
   return { ...result, prompt, usedAssetIds: [...new Set(selected.map(asset => asset.assetId))] };
 }
 
-function sceneDirection(preset: MockupPreset, inputs: MockupPromptInputs): string {
+function sceneDirection(preset: MockupPreset, inputs: MockupPromptInputs, blankScene: boolean): string {
   return [
-    'Create an original premium brand presentation photograph for a visual identity system.',
+    blankScene ? 'Create an original premium brand presentation photograph for a visual identity system.' : 'Use the supplied scene; the following details describe its intended art direction.',
     `Scene: ${preset.scene}.`, `Composition: ${preset.composition}.`,
     `Material: ${(inputs.material ?? preset.material).trim()}.`, `Camera: ${preset.camera}.`,
     'Lighting: controlled low-key studio photography, deep charcoal surroundings, soft directional key light, readable material detail, restrained contrast, natural shadows and a cinematic editorial finish.',
     'Palette in the scene: neutral black, charcoal and restrained warm neutrals.',
     `Required output aspect ratio: ${(inputs.aspectRatio ?? '16:9').trim()}.`,
     inputs.sceneVariant ? `Designer-supplied scene variation: ${inputs.sceneVariant.trim()}.` : '',
-    'Leave the designated application surface clean and unobstructed.',
-    'No branding, no invented lettering, no watermark, no additional logos.',
-    "Produce a new scene; do not reproduce a specific person's identity or an existing photograph.",
+    blankScene ? 'Leave the designated application surface clean and unobstructed.' : '',
+    blankScene ? 'No branding, no invented lettering, no watermark, no additional logos.' : '',
+    blankScene ? "Produce a new scene; do not reproduce a specific person's identity or an existing photograph." : '',
   ].filter(Boolean).join('\n');
 }
