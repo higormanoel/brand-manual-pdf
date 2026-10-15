@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { PDFDocument } from "pdf-lib";
 import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 
 test("shares exact object geometry, loaded media and live text between editor and print", async ({
   page,
@@ -29,6 +29,16 @@ test("shares exact object geometry, loaded media and live text between editor an
     "overflow",
     "hidden",
   );
+  await expect(
+    page.locator(
+      '[data-node-id="mask-overlay-proof"] img[data-asset-id="proof-mask"]',
+    ),
+  ).toHaveCount(1);
+  await expect(
+    page.locator(
+      '[data-node-id="mask-overlay-proof"] img[data-asset-id="proof-overlay"]',
+    ),
+  ).toHaveCount(1);
   const projection = await page
     .locator("[data-projection]")
     .evaluate((element) => {
@@ -140,6 +150,9 @@ test("shares exact object geometry, loaded media and live text between editor an
     [1120, 370, 221, 244, 171],
     [1300, 400, 37, 74, 66],
     [1300, 520, 228, 138, 81],
+    [1000, 850, 221, 244, 171],
+    [1170, 850, 255, 255, 255],
+    [1275, 865, 49, 89, 173],
   ]) {
     const i = (y * 1920 + x) * 4;
     [r, g, b].forEach((value, c) =>
@@ -152,9 +165,104 @@ test("shares exact object geometry, loaded media and live text between editor an
     [1300, 520],
     [1500, 800],
     [800, 900],
+    [1000, 850],
+    [1170, 850],
+    [1275, 865],
   ]) {
     const i = (y * 1920 + x) * 4;
     for (let c = 0; c < 3; c++)
       expect(Math.abs(screen.data[i + c] - print.data[i + c])).toBeLessThan(12);
   }
+});
+
+test("measures a cold Unicode subset using the loaded font on the first call", async ({
+  page,
+}, info) => {
+  await page.goto("/?render-proof");
+  await expect(page.locator('[data-render-ready="true"]')).toBeVisible();
+  const result = await page.evaluate(async () => {
+    const { measureText } = await import(
+      "/src/render/textMeasurement.ts" as string
+    );
+    const text = "тттттттттт";
+    const style = {
+      fontFamily: "Inter",
+      fontSize: 32,
+      fontWeight: 400,
+      fontStyle: "normal",
+      lineHeight: 1.2,
+      letterSpacing: 0,
+      color: "#000000",
+      align: "left",
+      verticalAlign: "top",
+    };
+    const first = await measureText({ text, style, width: 150, height: 40 });
+    await document.fonts.load("normal 400 32px Inter", text);
+    const loaded = await measureText({ text, style, width: 150, height: 40 });
+    return { first, loaded };
+  });
+  const metricsPath = info.outputPath("cold-font-measurements.json");
+  writeFileSync(metricsPath, JSON.stringify(result, null, 2));
+  await info.attach("cold-font-measurements.json", {
+    path: metricsPath,
+    contentType: "application/json",
+  });
+  expect(result.first.height).toBe(result.loaded.height);
+  expect(result.first.fontAvailable).toBe(true);
+  expect(result.first.overflow).toBe(true);
+});
+
+test("accepts CSS family stacks and quoted uploaded families while reporting real substitution", async ({
+  page,
+}) => {
+  await page.goto("/?render-proof");
+  await expect(page.locator('[data-render-ready="true"]')).toBeVisible();
+  const results = await page.evaluate(async () => {
+    const { measureText } = await import(
+      "/src/render/textMeasurement.ts" as string
+    );
+    const uploaded = new FontFace(
+      "Marquio Uploaded, Proof",
+      "url(/node_modules/@fontsource/inter/files/inter-latin-400-normal.woff2)",
+    );
+    document.fonts.add(await uploaded.load());
+    const style = {
+      fontSize: 32,
+      fontWeight: 400,
+      fontStyle: "normal",
+      lineHeight: 1.2,
+      letterSpacing: 0,
+      color: "#000000",
+      align: "left",
+      verticalAlign: "top",
+    };
+    return Promise.all(
+      [
+        "Inter",
+        "Inter, sans-serif",
+        '"Inter", sans-serif',
+        '"Marquio Uploaded, Proof", serif',
+        "Missing-proof-font, Inter, sans-serif",
+      ].map((fontFamily) =>
+        measureText({
+          text: "Uploaded proof",
+          style: { ...style, fontFamily },
+          width: 250,
+          height: 50,
+        }),
+      ),
+    );
+  });
+  expect(results.map((result) => result.fontAvailable)).toEqual([
+    true,
+    true,
+    true,
+    true,
+    false,
+  ]);
+  expect(results.slice(1, 4).map((result) => result.height)).toEqual([
+    results[0].height,
+    results[0].height,
+    results[0].height,
+  ]);
 });

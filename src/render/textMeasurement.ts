@@ -34,31 +34,90 @@ export function textCSS(style: TextStyle): CSSProperties {
   };
 }
 function fontDescriptor(style: TextStyle) {
-  return `${style.fontStyle} ${style.fontWeight} ${style.fontSize}px ${JSON.stringify(style.fontFamily)}`;
+  // fontFamily is already CSS syntax, including quoted names and fallback lists.
+  return `${style.fontStyle} ${style.fontWeight} ${style.fontSize}px ${style.fontFamily}`;
 }
-export async function fontAvailable(style: TextStyle): Promise<boolean> {
+function primaryFamily(value: string) {
+  let quote = "",
+    escaped = false,
+    end = value.length;
+  for (let i = 0; i < value.length; i++) {
+    const char = value[i];
+    if (escaped) {
+      escaped = false;
+      continue;
+    }
+    if (char === "\\") {
+      escaped = true;
+      continue;
+    }
+    if (quote) {
+      if (char === quote) quote = "";
+    } else if (char === '"' || char === "'") quote = char;
+    else if (char === ",") {
+      end = i;
+      break;
+    }
+  }
+  const css = value.slice(0, end).trim();
+  const quoted = css.startsWith('"') || css.startsWith("'");
+  const name = (quoted ? css.slice(1, -1) : css)
+    .replace(/\\([\da-f]{1,6}\s?|.)/gi, (_, escape: string) =>
+      /^[\da-f]/i.test(escape)
+        ? String.fromCodePoint(parseInt(escape.trim(), 16) || 0xfffd)
+        : escape,
+    )
+    .toLowerCase();
+  return {
+    css,
+    name,
+    generic:
+      !quoted &&
+      [
+        "serif",
+        "sans-serif",
+        "monospace",
+        "system-ui",
+        "cursive",
+        "fantasy",
+        "ui-serif",
+        "ui-sans-serif",
+        "ui-monospace",
+        "ui-rounded",
+        "math",
+        "fangsong",
+      ].includes(name),
+  };
+}
+/** Reports whether the requested primary face exists; a working fallback is still substitution. */
+export async function fontAvailable(
+  style: TextStyle,
+  text = " ",
+): Promise<boolean> {
+  if (!CSS.supports("font-family", style.fontFamily)) return false;
   try {
-    await document.fonts.load(fontDescriptor(style));
+    // Unicode-range faces load only for characters in this sample. A space loads
+    // Latin alone and would let a cold Cyrillic/Greek measurement use fallback.
+    await document.fonts.load(fontDescriptor(style), text || "\u200b");
     await document.fonts.ready;
   } catch {
     return false;
   }
-  const family = style.fontFamily.replace(/['"]/g, "").toLowerCase();
-  if (["serif", "sans-serif", "monospace", "system-ui"].includes(family))
-    return true;
+  const family = primaryFamily(style.fontFamily);
+  if (family.generic) return true;
   for (const face of document.fonts)
     if (
-      face.family.replace(/['"]/g, "").toLowerCase() === family &&
+      primaryFamily(face.family).name === family.name &&
       face.status === "loaded"
     )
       return true;
-  // System faces are not enumerated by FontFaceSet; compare against two distinct fallbacks.
+  // Test the primary family alone so an available fallback cannot conceal its absence.
   const ctx = document.createElement("canvas").getContext("2d")!;
   const sample = "mmmmmmmmmmWWWWiii0123456789";
   return ["monospace", "serif"].every((fallback) => {
     ctx.font = `32px ${fallback}`;
     const base = ctx.measureText(sample).width;
-    ctx.font = `32px ${JSON.stringify(style.fontFamily)}, ${fallback}`;
+    ctx.font = `32px ${family.css}, ${fallback}`;
     return Math.abs(ctx.measureText(sample).width - base) > 0.01;
   });
 }
@@ -71,7 +130,7 @@ export async function measureText(
     (request.height !== undefined && !(request.height > 0))
   )
     throw new Error("A caixa de texto exige dimensões positivas.");
-  const available = await fontAvailable(request.style);
+  const available = await fontAvailable(request.style, request.text);
   const element = document.createElement("div");
   Object.assign(element.style, textCSS(request.style), {
     position: "fixed",

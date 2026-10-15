@@ -40,7 +40,27 @@ const svg =
   encodeURIComponent(
     '<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400"><path fill="#254A42" d="M0 0h600v400H0z"/><path fill="#DDF4AB" d="M0 0h300v200H0z"/><path fill="#E48A51" d="M300 200h300v200H300z"/><circle cx="300" cy="200" r="70" fill="white"/></svg>',
   );
+const compositionAssets = {
+  "proof-mask":
+    "data:image/svg+xml," +
+    encodeURIComponent(
+      '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="100"><path fill="white" d="M0 0h200v100H0z"/></svg>',
+    ),
+  "proof-overlay":
+    "data:image/svg+xml," +
+    encodeURIComponent(
+      '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="100"><path fill="#3159AD" d="M300 25h50v50h-50z"/></svg>',
+    ),
+};
 const assets: AssetRecord[] = [
+  ...Object.keys(compositionAssets).map((id) => ({
+    id,
+    name: id,
+    mimeType: "image/svg+xml",
+    path: `${id}.svg`,
+    hash: "0".repeat(64),
+    origin: { kind: "fixture" as const },
+  })),
   {
     id: "proof-art",
     name: "Original geometry",
@@ -125,6 +145,15 @@ const nodes: DocumentNode[] = [
     children: [],
   },
   {
+    ...base("mask-overlay-proof", 950, 820, 400, 100),
+    type: "mockup",
+    template: "custom",
+    artworkAssetId: "proof-art",
+    maskAssetId: "proof-mask",
+    overlayAssetId: "proof-overlay",
+    children: [],
+  },
+  {
     ...base("footer", 91, 970, 1500, 40),
     type: "text",
     text: "Original photographic scene · Projective surface · Local Inter",
@@ -156,7 +185,10 @@ export function RenderHarness() {
         page={proof}
         assets={assets}
         resolveAsset={(asset) =>
-          asset.id === "proof-art" ? svg : `/${asset.path}`
+          asset.id === "proof-art"
+            ? svg
+            : compositionAssets[asset.id as keyof typeof compositionAssets] ||
+              `/${asset.path}`
         }
         mode="editor"
       />
