@@ -168,7 +168,27 @@ export function NodeRenderer({
           >
             {projection ? (
               <div data-projection style={projection}>
-                {image(node.artworkAssetId)}
+                {/* SVG sources otherwise preserve their viewBox aspect inside the
+                    1×1 img viewport, baking in letterboxing before projection.
+                    Normalize the complete artwork bounds explicitly; the hidden
+                    img keeps decode/error readiness shared with other media. */}
+                {image(node.artworkAssetId, { display: "none" })}
+                <svg
+                  width="1"
+                  height="1"
+                  viewBox="0 0 1 1"
+                  preserveAspectRatio="none"
+                  style={{ display: "block", overflow: "visible" }}
+                >
+                  <image
+                    href={url(node.artworkAssetId)}
+                    x="0"
+                    y="0"
+                    width="1"
+                    height="1"
+                    preserveAspectRatio="none"
+                  />
+                </svg>
               </div>
             ) : (
               image(node.artworkAssetId, { position: "absolute" })

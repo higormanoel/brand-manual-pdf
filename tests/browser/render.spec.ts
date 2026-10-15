@@ -266,3 +266,102 @@ test("accepts CSS family stacks and quoted uploaded families while reporting rea
     results[0].height,
   ]);
 });
+
+for (const mode of ["client", "ssr"] as const)
+  test(`fills rectangular SVG and raster surfaces through all edges in ${mode} browser and PDF`, async ({
+    page,
+  }, info) => {
+    await page.goto("/?render-proof");
+    await expect(page.locator('[data-render-ready="true"]')).toBeVisible();
+    const {
+      sources,
+    }: {
+      sources: { id: string; x: number; y: number; w: number; h: number }[];
+    } = await page.evaluate(async (mode) => {
+      const { mountProjectionProof } = await import(
+        "/tests/render/projectionHarness.tsx" as string
+      );
+      return mountProjectionProof(mode);
+    }, mode);
+    const screenPath = info.outputPath("rectangular-sources.png");
+    await page
+      .locator('[data-artboard-id="projection-proof"]')
+      .screenshot({ path: screenPath });
+    await page.emulateMedia({ media: "print" });
+    const pdfPath = info.outputPath("rectangular-sources.pdf");
+    await page.pdf({
+      path: pdfPath,
+      preferCSSPageSize: true,
+      printBackground: true,
+    });
+    const pdf = await PDFDocument.load(readFileSync(pdfPath));
+    expect(pdf.getPageCount()).toBe(1);
+    expect(pdf.getPage(0).getSize()).toEqual({ width: 1920, height: 1080 });
+    execFileSync("pdftoppm", [
+      "-png",
+      "-singlefile",
+      "-scale-to-x",
+      "1920",
+      "-scale-to-y",
+      "1080",
+      pdfPath,
+      info.outputPath("rectangular-sources-pdf"),
+    ]);
+    const { PNG } = await import("pngjs");
+    const screen = PNG.sync.read(readFileSync(screenPath)),
+      print = PNG.sync.read(
+        readFileSync(info.outputPath("rectangular-sources-pdf.png")),
+      );
+    const samples = sources.flatMap((source) =>
+      [
+        [0.05, 0.05, 206, 57, 44],
+        [0.95, 0.05, 49, 89, 173],
+        [0.95, 0.95, 228, 138, 81],
+        [0.05, 0.95, 221, 244, 171],
+        [0.5, 0.05, 40, 62, 54],
+        [0.95, 0.5, 40, 62, 54],
+        [0.5, 0.95, 40, 62, 54],
+        [0.05, 0.5, 40, 62, 54],
+      ].map(([u, v, r, g, b]) => ({
+        id: source.id,
+        x: Math.round(source.x + source.w * u),
+        y: Math.round(source.y + source.h * v),
+        rgb: [r, g, b],
+      })),
+    );
+    // Real original portrait source must reach both edges of the calibrated frame.
+    samples.push(
+      { id: "real-poster-left", x: 1382, y: 219, rgb: [40, 62, 54] },
+      { id: "real-poster-right", x: 1520, y: 219, rgb: [40, 62, 54] },
+    );
+    const evidence = samples.map((s) => ({
+      ...s,
+      screen: [
+        ...screen.data.subarray(
+          (s.y * 1920 + s.x) * 4,
+          (s.y * 1920 + s.x) * 4 + 3,
+        ),
+      ],
+      pdf: [
+        ...print.data.subarray(
+          (s.y * 1920 + s.x) * 4,
+          (s.y * 1920 + s.x) * 4 + 3,
+        ),
+      ],
+    }));
+    writeFileSync(
+      info.outputPath("projection-edge-pixels.json"),
+      JSON.stringify(evidence, null, 2),
+    );
+    for (const sample of evidence)
+      for (let channel = 0; channel < 3; channel++) {
+        expect(
+          Math.abs(sample.screen[channel] - sample.rgb[channel]),
+          `${sample.id} browser ${sample.x},${sample.y}`,
+        ).toBeLessThan(12);
+        expect(
+          Math.abs(sample.pdf[channel] - sample.rgb[channel]),
+          `${sample.id} PDF ${sample.x},${sample.y}`,
+        ).toBeLessThan(12);
+      }
+  });
