@@ -361,6 +361,18 @@ export async function createLocalRuntime(
   let project = await client.getProject();
   const snap = await client.snapshot(project.revision);
   const bytes = ownBytes(snap.assets);
+  // Keep the first confirmed snapshot for each media identity for this session.
+  // History may still render an older record after the same asset ID changes.
+  const assetRevisions = new Map<string, number>();
+  const assetIdentity = (asset: BrandProject["assets"][number]) =>
+    JSON.stringify([asset.id, asset.path, asset.hash, asset.mimeType]);
+  function rememberAssets(confirmed: BrandProject) {
+    for (const asset of confirmed.assets) {
+      const identity = assetIdentity(asset);
+      if (!assetRevisions.has(identity)) assetRevisions.set(identity, confirmed.revision);
+    }
+  }
+  rememberAssets(project);
   let store: RecoveryStore | undefined;
   let recoveryFailure: unknown;
   try {
@@ -373,10 +385,14 @@ export async function createLocalRuntime(
   const runtime: StudioRuntime = {
     mode: "local",
     project: structuredClone(project),
-    resolveAsset: (asset) => client.assetUrl(asset.id),
+    resolveAsset(asset) {
+      const revision = assetRevisions.get(assetIdentity(asset));
+      return revision === undefined ? "" : client.assetUrl(asset.id, revision);
+    },
     async commit(batch) {
       const ack = await client.commit(batch);
       project = ack.project;
+      rememberAssets(project);
       return ack;
     },
     async importAsset(input: AssetImportInput, batch) {
@@ -384,11 +400,13 @@ export async function createLocalRuntime(
       const result = await client.importAsset({ ...input, bytes: copy }, batch);
       bytes[result.asset.path] = copy;
       project = result.ack.project;
+      rememberAssets(project);
       return result;
     },
     async reload() {
       project = await client.getProject();
       const snapshot = await client.snapshot(project.revision);
+      rememberAssets(snapshot.project);
       for (const [name, value] of Object.entries(snapshot.assets))
         Object.defineProperty(bytes, name, {
           value: new Uint8Array(value),

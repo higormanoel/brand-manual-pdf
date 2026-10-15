@@ -51,8 +51,8 @@ export async function startLocalServer(options: LocalServerOptions): Promise<Loc
         }
         if (url.pathname.startsWith('/api/assets/') && request.method === 'GET') {
           const id = decodeURIComponent(url.pathname.slice('/api/assets/'.length));
-          const project = await repository.load(); const asset = project.assets.find(a => a.id === id); if (!asset) throw new SessionError(404, 'Asset not found');
-          const snapshot = await repository.snapshot(project.revision);
+          const snapshot = await repository.snapshot(revision(url));
+          const asset = snapshot.project.assets.find(a => a.id === id); if (!asset) throw new SessionError(404, 'Asset not found');
           // Assets are delivered as attachments where opening them could execute active markup.
           response.writeHead(200, { 'Content-Type': asset.mimeType, 'Content-Disposition': 'inline', 'Content-Security-Policy': "default-src 'none'; sandbox" }); response.end(snapshot.assets[asset.path]); return;
         }

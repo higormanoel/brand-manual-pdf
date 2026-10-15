@@ -18,7 +18,7 @@ it('exchanges and clears the fragment, confirms imports and preserves typed conf
     try { await client.commit({ ...pending, commandId: 'stale' }); throw new Error('Conflict missing'); } catch (error) { expect(error).toBeInstanceOf(LocalApiError); expect(error).toMatchObject({ status: 409, code: 'revision-conflict', currentRevision: 1 }); }
     expect(pending.expectedRevision).toBe(0);
     const result = await client.importAsset({ name: 'a.png', mimeType: 'image/png', bytes: new Uint8Array([1, 2]), origin: { kind: 'manual' } }, { commandId: 'asset', expectedRevision: 1 }); expect(result.ack.revision).toBe(2);
-    expect(client.assetUrl(result.asset.id)).toBe(`${server.origin}/api/assets/${result.asset.id}`);
+    expect(client.assetUrl(result.asset.id, 2)).toBe(`${server.origin}/api/assets/${result.asset.id}?revision=2`);
     const snapshot = await client.snapshot(2); expect([...snapshot.assets[result.asset.path]]).toEqual([1, 2]);
     expect([...(await client.portable(2)).slice(0, 2)]).toEqual([80, 75]);
   } finally { await server.close(); await fs.rm(folder, { recursive: true }); }

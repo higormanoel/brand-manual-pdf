@@ -8,7 +8,7 @@ export class LocalApiError extends Error {
 export interface LocalProjectClient {
   getProject(): Promise<BrandProject>; commit(batch: CommandBatch): Promise<SaveAck>;
   importAsset(input: AssetImportInput, batch: Pick<CommandBatch, 'commandId' | 'expectedRevision'>): Promise<{ asset: AssetRecord; ack: SaveAck }>;
-  assetUrl(id: string): string; snapshot(revision: number): Promise<ProjectSnapshot>; portable(revision: number): Promise<Uint8Array>;
+  assetUrl(id: string, revision: number): string; snapshot(revision: number): Promise<ProjectSnapshot>; portable(revision: number): Promise<Uint8Array>;
 }
 function encodeBase64(bytes: Uint8Array): string {
   let binary = ''; for (let offset = 0; offset < bytes.length; offset += 0x8000) binary += String.fromCharCode(...bytes.subarray(offset, offset + 0x8000)); return btoa(binary);
@@ -30,7 +30,7 @@ export async function connectLocalProject(options: { location?: Pick<Location, '
     async getProject() { return parseProject(await (await request('/api/project')).json()); },
     async commit(batch) { const ack = await post('/api/commands', batch); return { commandId: ack.commandId, revision: ack.revision, project: parseProject(ack.project) }; },
     async importAsset(input, batch) { return post('/api/assets', { ...batch, name: input.name, mimeType: input.mimeType, origin: input.origin, bytesBase64: encodeBase64(input.bytes) }); },
-    assetUrl(id) { return `${origin}/api/assets/${encodeURIComponent(id)}`; },
+    assetUrl(id, revision) { return `${origin}/api/assets/${encodeURIComponent(id)}?revision=${validateRevision(revision)}`; },
     async snapshot(revision) {
       const result = await (await request(`/api/snapshot?revision=${validateRevision(revision)}`)).json(); const project = parseProject(result.project);
       if (result.revision !== revision || project.revision !== revision) throw new Error('Snapshot revision mismatch');

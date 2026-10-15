@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { PNG } from "pngjs";
 async function mountEditor(page: Page) {
   await page.goto("/?render-proof");
   await page.evaluate(async () => {
@@ -425,12 +426,29 @@ test("imports a real included photographic scene and full artwork, inserts appro
   await expect(
     page.locator('.canvas-region [data-node-type="mockup"]'),
   ).toHaveCount(1);
-  await expect(
-    page.locator(".canvas-region [data-projection] img"),
-  ).toBeVisible();
+  const projection = page.locator(".canvas-region [data-projection]");
+  await expect(projection.locator("svg image")).toBeVisible();
+  await expect(projection.locator("img")).toBeHidden();
+  await projection.locator("img").evaluate(async el => (el as HTMLImageElement).decode());
+  expect(await projection.locator("svg image").getAttribute("href")).toBe(
+    await projection.locator("img").getAttribute("src"),
+  );
   await page
     .getByRole("button", { name: "Ajustar à janela", exact: true })
     .click();
+  // The mapped surface must actually paint the imported card's cream field and
+  // dark green artwork; a visible but blank SVG element does not satisfy this.
+  const rendered = PNG.sync.read(await projection.screenshot({
+    path: testInfo.outputPath("photographic-artwork.png"),
+  }));
+  const countColor = (rgb: number[]) => {
+    let count = 0;
+    for (let i = 0; i < rendered.data.length; i += 4)
+      if (rgb.every((channel, c) => Math.abs(rendered.data[i + c] - channel) < 8)) count++;
+    return count;
+  };
+  expect(countColor([246, 240, 231])).toBeGreaterThan(1000);
+  expect(countColor([40, 62, 54])).toBeGreaterThan(30);
   await page.screenshot({
     path: testInfo.outputPath("photographic-application.png"),
   });
