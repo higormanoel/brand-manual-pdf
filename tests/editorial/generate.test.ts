@@ -123,7 +123,7 @@ describe('editorial proposals', () => {
     const result = await generateManual(project, { variantId: 'font-proof', measureText: async request => ({ ...await measureText(request), fontAvailable: !request.style.fontFamily.startsWith('Uploaded Editorial') }) });
     const nodes = result.sections.flatMap(s => s.pages.flatMap(p => p.nodes)).filter((n): n is TextNode => n.type === 'text');
     expect(nodes.some(n => n.name.startsWith('body') && n.style.fontFamily.startsWith('Uploaded Editorial'))).toBe(true);
-    expect(nodes.some(n => n.name.startsWith('specimen') && n.style.fontFamily.startsWith('"Georgia"'))).toBe(true);
+    expect(nodes.some(n => n.name.startsWith('specimen') && n.style.fontFamily.startsWith('"Libre Baskerville"'))).toBe(true);
     expect(result.diagnostics.some(d => d.code === 'font-substitution')).toBe(true);
   });
 
@@ -153,7 +153,7 @@ describe('editorial proposals', () => {
     const section = result.sections.find(s => s.sectionId === project.sections.find(s => s.kind === targetKind)!.id)!;
     const identity = section.pages.flatMap(page => page.nodes).filter(node => {
       if (kind === 'color') return node.name === 'swatch-forest' || (node.type === 'text' && ['Floresta', '#283E36', 'Fundos institucionais e assinatura principal.'].includes(node.text));
-      if (kind === 'typography') return node.name.startsWith('specimen-font-display') || (node.type === 'text' && node.text === 'Georgia');
+      if (kind === 'typography') return node.name.startsWith('specimen-font-display') || (node.type === 'text' && node.text === 'Libre Baskerville');
       return (node.type === 'image' && node.assetId === 'asset-logo-reversed') || (node.type === 'text' && node.text === 'Assinatura clara') || node.name === 'logo-background';
     });
     expect(identity.length).toBeGreaterThanOrEqual(3);

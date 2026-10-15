@@ -566,3 +566,19 @@ test("pans with space and toggles grid, guides and snapping without typing-field
     page.locator('.canvas-region [data-node-type="text"]'),
   ).toHaveCount(1);
 });
+
+// Break caught: binary fixture fonts must survive the browser demo adapter and ZIP reopen unchanged.
+test("memory fixture preserves portable brand font bytes", async ({ page }) => {
+  await page.goto("/?render-proof");
+  const result = await page.evaluate(async () => {
+    const { createMemoryRuntime } = await import(/* @vite-ignore */ "/src/studio/memoryRuntime.ts" as string);
+    const { importPortable } = await import(/* @vite-ignore */ "/src/storage/portable.ts" as string);
+    const { sha256 } = await import(/* @vite-ignore */ "/src/storage/snapshot.ts" as string);
+    const runtime = await createMemoryRuntime();
+    const snapshot = await importPortable(await runtime.exportPortable(runtime.project.revision));
+    const face = snapshot.project.brand.typography.find((f: { id: string }) => f.id === "font-display");
+    const asset = snapshot.project.assets.find((a: { id: string }) => a.id === face.assetId);
+    return asset ? { hash: await sha256(snapshot.assets[asset.path]), size: snapshot.assets[asset.path].length } : null;
+  });
+  expect(result).toEqual({ hash: "05a95421961341c5b2556285e8415df9db27dab4f4abe22b446b3c6a8b916c5d", size: 171900 });
+});

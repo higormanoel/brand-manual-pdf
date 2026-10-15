@@ -155,7 +155,7 @@ describe('Aurora original demonstration fixture', () => {
     expect(project.pages).toEqual([]);
   });
 
-  it('ships original SVG assets whose stored hashes match their bytes', async () => {
+  it('ships original artwork and licensed font assets whose stored hashes match their bytes', async () => {
     const { existsSync } = await import('node:fs');
     const { readFile } = await import('node:fs/promises');
     const { createHash } = await import('node:crypto');
@@ -165,9 +165,17 @@ describe('Aurora original demonstration fixture', () => {
     for (const asset of project.assets) {
       const bytes = await readFile(new URL(`../../fixtures/aurora/${asset.path}`, import.meta.url));
       expect(createHash('sha256').update(bytes).digest('hex')).toBe(asset.hash);
-      expect(asset.mimeType).toBe('image/svg+xml');
       expect(asset.origin.kind).toBe('fixture');
-      expect(asset.license).toContain('CC0');
+      if (asset.mimeType === 'font/ttf') {
+        expect(asset.license).toContain('SIL Open Font License 1.1');
+        expect(project.brand.typography.some(face => face.assetId === asset.id)).toBe(true);
+      } else if (asset.mimeType === 'text/plain') {
+        expect(asset.license).toContain('SIL Open Font License 1.1');
+        expect(bytes.toString('utf8')).toContain('SIL OPEN FONT LICENSE Version 1.1');
+      } else {
+        expect(asset.mimeType).toBe('image/svg+xml');
+        expect(asset.license).toContain('CC0');
+      }
     }
   });
 });

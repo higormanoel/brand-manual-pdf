@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { writeFileSync } from 'node:fs';
+import type { TextMeasureRequest } from '../../src/render/textMeasurement';
 
 test('continues complete text using uploaded font metrics and leaves prior edited variants intact', async ({ page }, info) => {
   await page.goto('/?render-proof');
@@ -49,7 +50,12 @@ test('continues complete text using uploaded font metrics and leaves prior edite
   await page.locator('#pagination-proof > section').first().screenshot({ path: info.outputPath('pagination-first.png') });
 });
 
-test('renders the full fictitious fixture through shared Artboard with all live text inside its boxes', async ({ page }, info) => {
+test('renders the portable fictitious fixture without local fonts and keeps all live text inside its boxes', async ({ page }, info) => {
+  // Break caught: the bundled demo must not depend on installed proprietary fonts.
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send('DOM.enable');
+  await cdp.send('CSS.enable');
+  await cdp.send('CSS.setLocalFontsEnabled', { enabled: false });
   await page.goto('/?render-proof');
   await expect(page.locator('[data-render-ready="true"]')).toBeVisible();
   const result = await page.evaluate(async () => {
@@ -58,8 +64,32 @@ test('renders the full fictitious fixture through shared Artboard with all live 
     const { measureText } = await import(/* @vite-ignore */ '/src/render/textMeasurement.ts' as string);
     const { preflight } = await import(/* @vite-ignore */ '/src/render/preflight.ts' as string);
     const { renderManualProof } = await import(/* @vite-ignore */ '/tests/editorial/browserProof.tsx' as string);
-    const project = parseProject(await (await fetch('/fixtures/aurora/project.json')).json());
-    const generated = await generateManual(project, { measureText, variantId: 'fixture-proof' });
+    const { loadProjectFonts } = await import(/* @vite-ignore */ '/src/render/fonts.ts' as string);
+    const { createSnapshot, sha256 } = await import(/* @vite-ignore */ '/src/storage/snapshot.ts' as string);
+    const { exportPortable, importPortable } = await import(/* @vite-ignore */ '/src/storage/portable.ts' as string);
+    const original = parseProject(await (await fetch('/fixtures/aurora/project.json')).json());
+    const assets: Record<string, Uint8Array> = {};
+    for (const asset of original.assets) assets[asset.path] = new Uint8Array(await (await fetch(`/fixtures/aurora/${asset.path}`)).arrayBuffer());
+    const reopened = await importPortable(await exportPortable(await createSnapshot(original, assets)));
+    const project = reopened.project;
+    const urls: string[] = [];
+    const fonts = await loadProjectFonts(project, (asset: { path: string; mimeType: string }) => {
+      const url = URL.createObjectURL(new Blob([new Uint8Array(reopened.assets[asset.path]).buffer], { type: asset.mimeType }));
+      urls.push(url); return url;
+    });
+    const display = project.brand.typography.find((f: { id: string }) => f.id === 'font-display');
+    const licenseAsset = project.assets.find((a: { path: string }) => a.path === 'assets/LibreBaskerville-OFL.txt');
+    const fontAsset = project.assets.find((a: { id: string }) => a.id === display.assetId);
+    const faceWeightsBeforeMeasurement = [...window.document.fonts].filter(f => f.family.replaceAll('"', '') === 'Libre Baskerville' && f.status === 'loaded').map(f => f.weight).sort();
+    // CDP disables CSS local() sources. Also audit every measurement against
+    // registered web faces: installed family matching must never make this proof pass.
+    const unbundledMeasurements: string[] = [];
+    const projectOnlyMeasure: typeof measureText = async (request: TextMeasureRequest) => {
+      const primary = request.style.fontFamily.split(',')[0].replaceAll('"', '').trim();
+      if (![...window.document.fonts].some(f => f.family.replaceAll('"', '') === primary && f.status === 'loaded')) unbundledMeasurements.push(primary);
+      return measureText(request);
+    };
+    const generated = await generateManual(project, { measureText: projectOnlyMeasure, variantId: 'fixture-proof' });
     const pages = generated.sections.flatMap((s: { pages: unknown[] }) => s.pages);
     const document = parseProject({ ...project, pages });
     const measurements: Record<string, unknown> = {};
@@ -70,8 +100,18 @@ test('renders the full fictitious fixture through shared Artboard with all live 
       const title = p.nodes.find(n => n.name === 'chapter-title')!;
       return { pageId: p.id, numberId: number.id, titleId: title.id, numberY: number.transform.y, titleY: title.transform.y };
     });
-    return { pages: pages.length, nodes: pages.reduce((n: number, p: { nodes: unknown[] }) => n + p.nodes.length, 0), openers, diagnostics: [...generated.diagnostics, ...preflight(document, measurements)] };
+    return { licenseHash: licenseAsset ? await sha256(reopened.assets[licenseAsset.path]) : null, fonts, unbundledMeasurements, faceWeightsBeforeMeasurement, fontHash: fontAsset ? await sha256(reopened.assets[fontAsset.path]) : null, fontBytes: fontAsset ? reopened.assets[fontAsset.path].length : 0, pages: pages.length, nodes: pages.reduce((n: number, p: { nodes: unknown[] }) => n + p.nodes.length, 0), openers, diagnostics: [...generated.diagnostics, ...preflight(document, measurements)] };
   });
+  expect(result.fonts.filter((font: { typographyId: string }) => font.typographyId === 'font-display')).toEqual([
+    expect.objectContaining({ family: 'Libre Baskerville', weight: 400, status: 'loaded', source: 'asset' }),
+    expect.objectContaining({ family: 'Libre Baskerville', weight: 700, status: 'loaded', source: 'asset' }),
+  ]);
+  expect(result.fonts.every((font: { status: string }) => font.status === 'loaded')).toBe(true);
+  expect(result.unbundledMeasurements).toEqual([]);
+  expect(result.faceWeightsBeforeMeasurement).toEqual(['400', '700']);
+  expect(result.fontHash).toBe('05a95421961341c5b2556285e8415df9db27dab4f4abe22b446b3c6a8b916c5d');
+  expect(result.fontBytes).toBe(171900);
+  expect(result.licenseHash).toBe('3624eddd4c8f8a908130a417ae7cd089c9da69899c4e0ca1a5217d0a6fae16fd');
   expect(result.pages).toBeGreaterThan(15);
   expect(result.diagnostics).toEqual([]);
   const overflow = await page.locator('[data-text-content]').evaluateAll(elements => elements.flatMap(element => {

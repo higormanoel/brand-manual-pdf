@@ -10,7 +10,7 @@ import { loadProjectFonts } from "../render/fonts";
 import { exportPortable } from "../storage/portable";
 import type { StudioRuntime } from "./runtime-contract";
 const fixtureSources = import.meta.glob("../../fixtures/aurora/assets/*", {
-  query: "?raw",
+  query: "?url&no-inline",
   import: "default",
   eager: true,
 }) as Record<string, string>;
@@ -23,7 +23,7 @@ export async function createMemoryRuntime(): Promise<StudioRuntime> {
       const source = fixtureSources[`../../fixtures/aurora/${asset.path}`];
       if (typeof source !== "string")
         throw new Error(`Asset indisponível: ${asset.name}`);
-      bytes[asset.path] = new TextEncoder().encode(source);
+      bytes[asset.path] = new Uint8Array(await (await fetch(source)).arrayBuffer());
       const url = URL.createObjectURL(
         new Blob([new Uint8Array(bytes[asset.path]).buffer], {
           type: asset.mimeType,

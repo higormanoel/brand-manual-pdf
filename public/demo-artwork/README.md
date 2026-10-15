@@ -4,4 +4,4 @@ Original vector compositions made for the fictitious Aurora demonstration. These
 
 Use these with the original photographic scenes in `public/mockups/`. Register imported asset bytes in the project manifest before saving/exporting a portable project. The app must not rely on a private cache or an external artwork URL.
 
-Typeface references use system Georgia/Arial; font binaries are not included. This demonstration is original project material under the same CC0 designation as `fixtures/aurora/`. The public example must identify Aurora as fictitious.
+Lettering uses Libre Baskerville and Inter converted to geometry, so isolated SVG images do not depend on installed fonts. Readable SVG sources remain in each file’s metadata and can be rebuilt with `fixtures/aurora/outline-artwork.py`; see [font provenance](../../fixtures/aurora/font-provenance.json) and [typeface notices](../../THIRD_PARTY_NOTICES.md). The unmodified Libre Baskerville TTF is included in the fixture; Inter is bundled by the application. This demonstration is original project material under the same CC0 designation as `fixtures/aurora/`. The public example must identify Aurora as fictitious.
