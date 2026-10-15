@@ -31,7 +31,7 @@ Aurora é uma torrefação e café fictícios. Textos, identidade e ilustraçõe
 
 ## Abrir o exemplo pronto
 
-O [PDF Aurora](examples/Aurora.pdf) tem 46 páginas, exportadas da revisão confirmada 0. O [projeto portátil](examples/Aurora.marquio.zip) inclui os 11 assets originais. Abra-o pelo menu de projeto do Studio para editar no modo navegador, ou gere uma cópia local nova:
+O [PDF Aurora](examples/Aurora.pdf) tem 46 páginas, exportadas da revisão confirmada 0. O [projeto portátil](examples/Aurora.marquio.zip) inclui 13 assets, entre eles o TTF original de Libre Baskerville e seu aviso OFL completo. Inter acompanha o aplicativo. Abra-o pelo menu de projeto do Studio para editar no modo navegador, ou gere uma cópia local nova:
 
 ```bash
 node examples/create-demo.mjs ./marquio-demo-output
@@ -79,7 +79,7 @@ Use a revisão realmente retornada; os números acima são exemplos. Lotes usam 
 
 ## Limites e desenvolvimento
 
-Não há suporte a PSD, CMYK, PDF/X ou todas as ferramentas do Photoshop. O produto não vem conectado a um provedor de geração. Fontes ausentes geram diagnóstico; arquivos de fontes do cliente precisam da licença apropriada. Inter é distribuída sob [SIL OFL](public/licenses/Inter-OFL.txt). O armazenamento requer filesystem local com hard links exclusivos e sincronização de diretórios, sem protocolo de colaboração distribuída nem limpeza automática do histórico.
+Não há suporte a PSD, CMYK, PDF/X ou todas as ferramentas do Photoshop. O produto não vem conectado a um provedor de geração. Fontes ausentes geram diagnóstico; arquivos de fontes do cliente precisam da licença apropriada. Inter é distribuída sob [SIL OFL](public/licenses/Inter-OFL.txt). O exemplo Aurora também inclui [Libre Baskerville sob SIL OFL](public/licenses/LibreBaskerville-OFL.txt); seus espécimes usam esses assets licenciados, com lettering em curvas nas aplicações para preservar a identidade sem depender de fontes proprietárias do sistema. O armazenamento requer filesystem local com hard links exclusivos e sincronização de diretórios, sem protocolo de colaboração distribuída nem limpeza automática do histórico.
 
 ```bash
 npm run typecheck

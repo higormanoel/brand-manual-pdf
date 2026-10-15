@@ -26,5 +26,5 @@ try {
   const result = await fetch(`${server.origin}/api/portable?revision=${project.revision}`, { headers: { Cookie: cookie, Origin: server.origin } });
   if (!result.ok) throw new Error('Could not export the confirmed portable project.');
   await fs.writeFile(portable, new Uint8Array(await result.arrayBuffer()), { flag: 'wx' });
-  console.log(JSON.stringify({ folder, pdf, portable, revision: project.revision, pages: project.pages.length }));
+  console.log(JSON.stringify({ folder, pdf, portable, revision: project.revision, pages: project.pages.length, assets: project.assets.length, fontAssets: project.assets.filter(asset => asset.mimeType.startsWith('font/')).map(asset => ({ id: asset.id, name: asset.name, hash: asset.hash })) }));
 } finally { await server.close(); }

@@ -33,7 +33,7 @@ Aurora is a fictitious neighborhood coffee roaster. Its text, identity and illus
 
 ## Try the finished example
 
-The included [Aurora PDF](examples/Aurora.pdf) has 46 pages, exported at confirmed revision 0. Its [portable source](examples/Aurora.marquio.zip) includes all 11 original assets. Open the portable from Studio's project menu to edit it in browser-only mode, or generate a fresh local copy:
+The included [Aurora PDF](examples/Aurora.pdf) has 46 pages, exported at confirmed revision 0. Its [portable source](examples/Aurora.marquio.zip) includes 13 assets, including the original Libre Baskerville TTF and its complete OFL notice. Inter is bundled with the application. Open the portable from Studio's project menu to edit it in browser-only mode, or generate a fresh local copy:
 
 ```bash
 node examples/create-demo.mjs ./marquio-demo-output
@@ -83,7 +83,7 @@ Revision numbers above are examples. Use the revision actually returned by the p
 
 ## Scope
 
-The Studio supports editable pages, text, images, shapes, groups, layers, transforms, history, optional intake, reusable mockups, local projects and portable backups. Local generation measures text with browser fonts; Chromium exports through the shared renderer with searchable text. Font uploads remain your responsibility to license; missing fonts produce substitution diagnostics. Inter is included under its [SIL Open Font License](public/licenses/Inter-OFL.txt).
+The Studio supports editable pages, text, images, shapes, groups, layers, transforms, history, optional intake, reusable mockups, local projects and portable backups. Local generation measures text with browser fonts; Chromium exports through the shared renderer with searchable text. Font uploads remain your responsibility to license; missing fonts produce substitution diagnostics. Inter is included under its [SIL Open Font License](public/licenses/Inter-OFL.txt). The Aurora example also bundles [Libre Baskerville under SIL OFL](public/licenses/LibreBaskerville-OFL.txt); its brand specimens use these licensed assets, with outlined lettering in the demonstration artwork so the identity does not depend on proprietary system fonts.
 
 This release does not support PSD import/export, CMYK, PDF/X or full Photoshop editing. It has no connected image-generation provider by default. Imported assets must be supported images or fonts, and manual review remains part of final export. Local storage requires a filesystem that supports exclusive hard links and directory synchronization; a network filesystem is not a supported distributed collaboration backend. No automatic pruning of retained project revisions or assets is performed.
 
