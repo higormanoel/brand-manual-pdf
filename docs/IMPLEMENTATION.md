@@ -31,7 +31,6 @@ Esta tabela preserva todas as decisões registradas como `Ruling:` no ledger de 
 | Preparar adaptadores e documentação em paralelo à integração final. | Comandos e caminhos dos hosts já estavam estáveis. | Adiar alterações compartilhadas, exemplos finais e suíte completa até o handoff. |
 | Colocar a edição de mockups já inseridos nas propriedades do Studio. | Cantos, máscara, sobreposição e imagem final também precisam continuar editáveis. | Mais testes de propriedades e histórico, preservando um único modelo de cena. |
 | Acrescentar publicação e índice atômicos ao RecoveryStore para o modo navegador. | A revisão e a gravação precisam compartilhar uma transação entre abas. | Mais superfície de armazenamento para testar e revisar, mantendo as APIs anteriores. |
-
 | Manter PSD, retoque completo, CMYK e PDF/X fora da primeira versão. | Limites já aprovados para o lançamento. | Intercâmbio PSD e conversões profissionais de impressão exigem evolução posterior. |
 | Manter contas, hospedagem, cobrança, colaboração ao vivo e marketplace fora desta entrega. | Priorizar o fluxo local aprovado. | Distribuição hospedada e colaboração simultânea continuam como trabalho separado. |
 | Não avaliar um provedor pago sem conexão como funcionalidade integrada. | Geração é opcional e nenhuma conexão é anunciada. | Cenas incluídas, uploads e prompts são os caminhos padrão disponíveis. |
