@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1500" viewBox="0 0 1000 1500" role="img" aria-label="Pôster conceitual da marca fictícia Aurora">
+  <rect width="1000" height="1500" fill="#283E36"/>
+  <path d="M100 120H900" stroke="#A8AD91"/>
+  <text x="100" y="190" fill="#F6F0E7" font-family="Arial,sans-serif" font-size="22" letter-spacing="7">CAFÉ &amp; PRESENÇA</text>
+  <g fill="#F6F0E7" font-family="Georgia,serif" font-size="158" letter-spacing="-7"><text x="90" y="450">Tempo</text><text x="90" y="620">para</text><text x="90" y="790">estar.</text></g>
+  <g transform="translate(585 870) scale(1.6)" fill="none" stroke="#C17042" stroke-width="7" stroke-linecap="round"><path d="M35 116a65 65 0 0 1 130 0M17 142h166M100 14v22M32 44l16 16M168 44l-16 16M9 88l22 6M191 88l-22 6"/></g>
+  <path d="M100 1250H900" stroke="#A8AD91"/>
+  <text x="95" y="1370" fill="#F6F0E7" font-family="Georgia,serif" font-size="100" letter-spacing="-5">aurora</text>
+  <text x="900" y="1350" text-anchor="end" fill="#F6F0E7" font-family="Arial,sans-serif" font-size="21">Torra pequena.</text>
+  <text x="900" y="1385" text-anchor="end" fill="#F6F0E7" font-family="Arial,sans-serif" font-size="21">Presença inteira.</text>
+</svg>

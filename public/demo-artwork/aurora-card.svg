@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="500" viewBox="0 0 1000 500" role="img" aria-label="Cartão conceitual da marca fictícia Aurora">
+  <rect width="1000" height="500" fill="#F6F0E7"/>
+  <g transform="translate(105 105) scale(.88)">
+    <g transform="translate(16 40)"><g fill="none" stroke="#283E36" stroke-width="9" stroke-linecap="round"><path d="M35 116a65 65 0 0 1 130 0M17 142h166M100 14v22M32 44l16 16M168 44l-16 16M9 88l22 6M191 88l-22 6"/></g></g>
+    <text x="260" y="163" fill="#283E36" font-family="Georgia,serif" font-size="116" letter-spacing="-6">aurora</text>
+    <text x="272" y="213" fill="#283E36" font-family="Arial,sans-serif" font-size="18" letter-spacing="7">CAFÉ &amp; PRESENÇA</text>
+  </g>
+  <path d="M110 380H890" stroke="#283E36" stroke-width="1"/>
+  <text x="110" y="425" fill="#283E36" font-family="Arial,sans-serif" font-size="17" letter-spacing="2">UM CAFÉ. UM TEMPO SEU.</text>
+  <text x="890" y="425" text-anchor="end" fill="#283E36" font-family="Arial,sans-serif" font-size="17">aurora.example</text>
+</svg>

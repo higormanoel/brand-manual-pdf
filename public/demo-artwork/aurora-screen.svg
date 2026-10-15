@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="900" viewBox="0 0 1400 900" role="img" aria-label="Layout web conceitual da marca fictícia Aurora">
+  <rect width="1400" height="900" fill="#F6F0E7"/>
+  <text x="75" y="110" fill="#283E36" font-family="Georgia,serif" font-size="62" letter-spacing="-3">aurora</text>
+  <g fill="#283E36" font-family="Arial,sans-serif" font-size="17"><text x="825" y="92">Nossa presença</text><text x="1035" y="92">Nossos cafés</text><text x="1210" y="92">Aproximar</text></g>
+  <path d="M75 150H1325" stroke="#A8AD91"/>
+  <text x="75" y="290" fill="#283E36" font-family="Arial,sans-serif" font-size="15" letter-spacing="5">DO GRÃO AO ENCONTRO.</text>
+  <g fill="#283E36" font-family="Georgia,serif" font-size="94" letter-spacing="-4"><text x="70" y="420">Uma pausa.</text><text x="70" y="525">Outra presença.</text></g>
+  <g fill="#283E36" font-family="Arial,sans-serif" font-size="23"><text x="75" y="610">Café de origem, torra cuidadosa e espaço</text><text x="75" y="648">para os encontros que fazem o dia.</text></g>
+  <rect x="75" y="705" width="255" height="60" rx="2" fill="#283E36"/>
+  <text x="202" y="743" text-anchor="middle" fill="#F6F0E7" font-family="Arial,sans-serif" font-size="18">Conhecer a Aurora</text>
+  <rect x="875" y="245" width="450" height="520" fill="#E6C493"/>
+  <circle cx="1100" cy="440" r="130" fill="#C17042"/>
+  <path d="M875 470H1325V765H875Z" fill="#A8AD91"/>
+  <path d="M875 590Q1100 480 1325 590V765H875Z" fill="#283E36"/>
+  <path d="M75 835H1325" stroke="#A8AD91"/>
+  <text x="75" y="875" fill="#283E36" font-family="Arial,sans-serif" font-size="13">AURORA · IDENTIDADE FICTÍCIA DE DEMONSTRAÇÃO</text>
+</svg>
