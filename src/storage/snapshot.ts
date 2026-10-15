@@ -48,7 +48,8 @@ function freeze<T>(value: T): T { if (value && typeof value === 'object') { Obje
 /** All source bytes are captured synchronously, before the first digest can yield to the caller. */
 export async function createSnapshot(projectInput: unknown, input: Readonly<Record<string, Uint8Array>>): Promise<ProjectSnapshot> {
   const project = parseProject(projectInput); const serialized = validateProjectLayout(project);
-  const borrowed: Record<string, Uint8Array> = Object.create(null); const sizes: Record<string, number> = { 'project.json': serialized.length }; let total = serialized.length;
+  const borrowed: Record<string, Uint8Array> = Object.create(null); const sizes: Record<string, number> = Object.create(null);
+  sizes['project.json'] = serialized.length; let total = serialized.length;
   for (const asset of project.assets) {
     const bytes = input[asset.path]; if (!(bytes instanceof Uint8Array)) throw new Error(`Missing asset: ${asset.path}`);
     if (bytes.length > MAX_ASSET_BYTES) throw new Error('Asset size limit exceeded');

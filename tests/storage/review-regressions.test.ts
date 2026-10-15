@@ -115,3 +115,19 @@ it('rejects metadata aliases and asset collisions in later commits while retaini
   await expect(repo.commit({ commandId: 'alias', expectedRevision: 1, commands: [{ type: 'asset.insert', asset: { ...imported.asset, id: 'other-id', path: imported.asset.path.toUpperCase() } }] })).rejects.toThrow(/alias|collision/i);
   expect((await repo.load()).revision).toBe(1); expect((await repo.snapshot(1)).project.assets[0].path).toBe(imported.asset.path);
 });
+
+// Run the real 128 MiB boundary in its own process so archive buffers are released independently of the test runner.
+it('accounts for __proto__ and roundtrips an accepted exact aggregate boundary', async () => {
+  const { build } = await import('esbuild'); const { spawn } = await import('node:child_process'); const dir = await folder(); const worker = path.join(dir, 'boundary.mjs');
+  await build({ stdin: { resolveDir: process.cwd(), contents: `import {createHash} from 'node:crypto'; import {createProject} from './src/core/project'; import {createSnapshot,storedZipSize,MAX_ASSET_BYTES,MAX_BUNDLE_BYTES} from './src/storage/snapshot'; import {exportPortable,importPortable} from './src/storage/portable';
+const hash=bytes=>createHash('sha256').update(bytes).digest('hex'); const project=createProject('Prototype boundary'); const files=Object.create(null); const sizes=Object.create(null); const full=new Uint8Array(MAX_ASSET_BYTES); const empty=new Uint8Array();
+for(let i=0;i<4;i++){const path='assets/'+i; files[path]=i<3?full:empty; project.assets.push({id:'asset-'+i,path,name:path,mimeType:'application/octet-stream',hash:hash(files[path]),origin:{kind:'manual'}}); sizes[path]=files[path].length;}
+files['__proto__']=empty; sizes['__proto__']=0; project.assets.push({id:'proto',path:'__proto__',name:'proto',mimeType:'application/octet-stream',hash:hash(empty),origin:{kind:'manual'}});
+sizes['project.json']=new TextEncoder().encode(JSON.stringify(project)).length; const lastLength=MAX_BUNDLE_BYTES-storedZipSize(sizes); const last=new Uint8Array(lastLength+94); files['assets/3']=last; project.assets[3].hash=hash(last);
+let rejected=false;try{await createSnapshot(project,files);}catch(error){if(!/size limit/.test(error.message))throw error;rejected=true;}
+if(!rejected){console.log(JSON.stringify({rejectedOversizedProto:false}));process.exit(0);}
+files['assets/3']=last.subarray(0,lastLength);project.assets[3].hash=hash(files['assets/3']);const snapshot=await createSnapshot(project,files);const packed=await exportPortable(snapshot);const restored=await importPortable(packed);
+console.log(JSON.stringify({rejectedOversizedProto:true,archiveLength:packed.length,prototypeBytes:restored.assets['__proto__'].length,assetCount:restored.project.assets.length,lastLength:restored.assets['assets/3'].length,expectedLastLength:lastLength}));` }, outfile: worker, bundle: true, platform: 'node', format: 'esm', logLevel: 'silent' });
+  const result = await new Promise<Record<string, unknown>>((resolve, reject) => { const child = spawn(process.execPath, [worker]); let stdout = ''; let stderr = ''; child.stdout.on('data', bytes => { stdout += bytes; }); child.stderr.on('data', bytes => { stderr += bytes; }); child.on('error', reject); child.on('exit', code => code === 0 ? resolve(JSON.parse(stdout)) : reject(new Error(`Boundary process exited ${code}: ${stderr}`))); });
+  expect(result).toMatchObject({ rejectedOversizedProto: true, archiveLength: 134217728, prototypeBytes: 0, assetCount: 5 }); expect(result.lastLength).toBe(result.expectedLastLength);
+}, 30000);

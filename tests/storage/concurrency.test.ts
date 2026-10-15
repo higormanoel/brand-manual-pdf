@@ -2,8 +2,9 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { build } from 'esbuild';
-import { expect, it } from 'vitest';
+import { expect, it, vi } from 'vitest';
 import { ProjectRepository } from '../../src/storage/repository';
 import { createProject } from '../../src/core/project';
 
@@ -42,4 +43,51 @@ try{const ack=await repo.commit({commandId:id,expectedRevision:0,commands:[{type
     // There is no shared lock release/reclaim: the dead legacy marker is left untouched.
     expect(JSON.parse(await fs.readFile(path.join(dir, '.marquio-write-lock/owner.json'), 'utf8')).pid).toBe(99999999);
   } finally { for (const child of children) if (child.exitCode === null) child.kill('SIGKILL'); await fs.rm(dir, { recursive: true, force: true }); }
+}, 15000);
+
+// Break caught: a real EEXIST after another importer's asset link must be fenced before the dependent revision is acknowledged.
+it('flushes an observed shared asset after the original publisher stalls between link and directory sync', async () => {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'marquio-asset-fence-'));
+  const repo = await ProjectRepository.open(dir, { project: createProject('Assets') }); const canonical = repo.folder;
+  const deferred = () => { let resolve!: () => void; const promise = new Promise<void>(done => { resolve = done; }); return { promise, resolve }; };
+  const firstReached = deferred(); const secondReached = deferred(); const linked = deferred(); const release = deferred();
+  const originalLink = fs.link.bind(fs); const originalOpen = fs.open.bind(fs); let published = false; let assetLinks = 0; let observedExists = false; const flushed: string[] = [];
+  let first: Promise<{ revision?: number; code?: string }> | undefined;
+  try {
+    vi.spyOn(fs, 'open').mockImplementation(async (...args) => {
+      const handle = await originalOpen(...args); const sync = handle.sync.bind(handle);
+      handle.sync = async () => { await sync(); if (published) flushed.push(path.relative(canonical, String(args[0]))); }; return handle;
+    });
+    vi.spyOn(fs, 'link').mockImplementation(async (source, target) => {
+      if (String(target).startsWith(path.join(canonical, 'assets') + path.sep)) {
+        if (++assetLinks === 1) { firstReached.resolve(); await secondReached.promise; await originalLink(source, target); published = true; linked.resolve(); await release.promise; return; }
+        secondReached.resolve(); await linked.promise;
+        try { await originalLink(source, target); } catch (error) { observedExists = (error as NodeJS.ErrnoException).code === 'EEXIST'; throw error; } return;
+      }
+      await originalLink(source, target);
+    });
+    const input = { name: 'shared.png', mimeType: 'image/png', bytes: new Uint8Array([1, 2, 3]), origin: { kind: 'manual' as const } };
+    first = repo.importAsset(input, { commandId: 'first', expectedRevision: 0 }).then(result => ({ revision: result.ack.revision }), error => ({ code: error.code }));
+    await firstReached.promise;
+    const second = await repo.importAsset(input, { commandId: 'second', expectedRevision: 0 }); const flushedBeforeAck = [...flushed];
+    expect(observedExists).toBe(true); expect(second.ack.revision).toBe(1); expect(flushedBeforeAck).toContain('assets');
+    release.resolve(); expect(await first).toMatchObject({ code: 'revision-conflict' });
+    expect([...(await repo.snapshot(1)).assets[second.asset.path]]).toEqual([1, 2, 3]);
+  } finally { secondReached.resolve(); linked.resolve(); release.resolve(); await first; vi.restoreAllMocks(); await fs.rm(dir, { recursive: true, force: true }); }
+}, 15000);
+
+it('fences an in-flight asset observed by asset.insert without passing through deduplication', async () => {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'marquio-reference-fence-')); const repo = await ProjectRepository.open(dir, { project: createProject('Observed asset') });
+  const originalOpen = fs.open.bind(fs); const originalLink = fs.link.bind(fs); let resume!: () => void; let notify!: () => void; const release = new Promise<void>(resolve => { resume = resolve; }); const linked = new Promise<void>(resolve => { notify = resolve; }); let published = false; const flushed: string[] = [];
+  let original: Promise<{ code?: string }> | undefined;
+  try {
+    vi.spyOn(fs, 'open').mockImplementation(async (...args) => { const handle = await originalOpen(...args); const sync = handle.sync.bind(handle); handle.sync = async () => { await sync(); if (published) flushed.push(path.relative(repo.folder, String(args[0]))); }; return handle; });
+    vi.spyOn(fs, 'link').mockImplementation(async (source, target) => { await originalLink(source, target); if (String(target).startsWith(path.join(repo.folder, 'assets') + path.sep)) { published = true; notify(); await release; } });
+    const bytes = new Uint8Array([8, 5, 3]); const hash = createHash('sha256').update(bytes).digest('hex');
+    original = repo.importAsset({ name: 'original', mimeType: 'image/png', origin: { kind: 'manual' }, bytes }, { commandId: 'original', expectedRevision: 0 }).then(() => ({}), error => ({ code: error.code }));
+    await linked;
+    const ack = await repo.commit({ commandId: 'reference', expectedRevision: 0, commands: [{ type: 'asset.insert', asset: { id: 'reference', name: 'Observed', path: `assets/${hash}`, hash, mimeType: 'image/png', origin: { kind: 'manual' } } }] });
+    const flushedBeforeAck = [...flushed]; expect(ack.revision).toBe(1); expect(flushedBeforeAck).toContain('assets');
+    resume(); expect(await original).toMatchObject({ code: 'revision-conflict' });
+  } finally { resume(); await original; vi.restoreAllMocks(); await fs.rm(dir, { recursive: true, force: true }); }
 }, 15000);

@@ -104,17 +104,22 @@ export class ProjectRepository {
     } catch (error) { if (isMissing(error)) throw new RepositoryError('revision-not-found', 'Revision is not retained'); throw error; }
   }
   private async validateAssets(project: BrandProject): Promise<Record<string, Uint8Array>> {
-    validateProjectLayout(project); const bytes: Record<string, Uint8Array> = Object.create(null);
+    validateProjectLayout(project); const bytes: Record<string, Uint8Array> = Object.create(null); const directories = new Set<string>();
     for (const asset of project.assets) {
-      try { bytes[asset.path] = await readBounded(await safePath(this.folder, asset.path), MAX_ASSET_BYTES); }
+      try { const target = await safePath(this.folder, asset.path); bytes[asset.path] = await readBounded(target, MAX_ASSET_BYTES); directories.add(path.dirname(target)); }
       catch (error) { if (isMissing(error)) throw new Error(`Missing asset: ${asset.path}`); throw error; }
     }
-    await createSnapshot(project, bytes); return bytes;
+    await createSnapshot(project, bytes);
+    // A referenced asset may have been linked by another publisher that has not flushed its parent yet.
+    for (const directory of directories) await syncDirectory(directory);
+    return bytes;
   }
   private async storeBytes(relative: string, bytes: Uint8Array) {
     validateAssetStoragePath(relative); const target = await safePath(this.folder, relative); await this.ensureDirectory(path.dirname(target));
     try { await this.publish(relative, bytes); }
-    catch (error) { if (!isExists(error)) throw error; const existing = await readBounded(target, MAX_ASSET_BYTES); if (sha256(existing) !== sha256(bytes)) throw new Error('Asset hash integrity mismatch'); }
+    catch (error) { if (!isExists(error)) throw error; const existing = await readBounded(target, MAX_ASSET_BYTES); if (sha256(existing) !== sha256(bytes)) throw new Error('Asset hash integrity mismatch');
+      // EEXIST observes the link, not its publisher's later directory fsync. Fence that observation here.
+      await syncDirectory(path.dirname(target)); }
   }
   async load(): Promise<BrandProject> { const state = await this.readState(); await this.validateAssets(state.project); return state.project; }
   private async receipt(state: State, commandId: string, fingerprint: string): Promise<SaveAck | undefined> {
