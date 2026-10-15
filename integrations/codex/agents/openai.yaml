@@ -1,0 +1,4 @@
+interface:
+  display_name: "Marquio"
+  short_description: "Create and edit brand manuals in Marquio Studio"
+  default_prompt: "Use $marquio to prepare an editable brand manual and review it in Studio before PDF export."

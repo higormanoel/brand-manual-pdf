@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Marquio export</title>
+    <style>
+      html,
+      body,
+      #root {
+        margin: 0;
+        padding: 0;
+      }
+      @media print {
+        .artboard-sheet {
+          break-after: page;
+          break-inside: avoid;
+          margin: 0 !important;
+          transform-origin: 0 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/export/browser.tsx"></script>
+  </body>
+</html>

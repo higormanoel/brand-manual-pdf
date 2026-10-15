@@ -1,0 +1,62 @@
+{
+  "name": "marquio-studio",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "build": "tsc --noEmit && vite build && vite build --config vite.node.config.ts",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "@fontsource/inter": "^5.3.0",
+    "jszip": "^3.10.2",
+    "pdf-lib": "^1.17.1",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "zod": "4.6.7",
+    "playwright": "1.64.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.1",
+    "@types/node": "^22.0.0",
+    "@types/pngjs": "^6.0.5",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "4.7.0",
+    "fake-indexeddb": "^6.2.5",
+    "pngjs": "^7.0.0",
+    "typescript": "5.9.3",
+    "vite": "6.4.4",
+    "vitest": "4.1.11"
+  },
+  "bin": {
+    "marquio": "bin/marquio.mjs"
+  },
+  "files": [
+    "bin/",
+    "dist/",
+    "src/",
+    "integrations/",
+    "agents/",
+    "SKILL.md",
+    "legacy/",
+    "assets/template_brand_manual.html",
+    "scripts/generate_pdf.sh",
+    "fixtures/",
+    "public/",
+    "README*",
+    "CONTRIBUTING.md",
+    "SECURITY.md",
+    "CHANGELOG.md",
+    "LICENSE",
+    "THIRD_PARTY_NOTICES.md",
+    "docs/assets/",
+    "examples/"
+  ]
+}

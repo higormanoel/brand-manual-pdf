@@ -1,0 +1,35 @@
+[
+  {
+    "id": "card-stack-photo",
+    "name": "Cartões sobre madeira",
+    "file": "card-stack.png",
+    "kind": "generated-photographic-scene",
+    "width": 1672,
+    "height": 941,
+    "surfaceCoordinates": "image-pixels-top-left-clockwise",
+    "surfaces": [
+      { "id": "loose-card", "name": "Cartão avulso", "corners": [{"x":741,"y":529},{"x":1319,"y":433},{"x":1419,"y":711},{"x":800,"y":815}] },
+      { "id": "stack-top", "name": "Topo da pilha", "corners": [{"x":271,"y":263},{"x":806,"y":67},{"x":967,"y":290},{"x":384,"y":500}] }
+    ]
+  },
+  {
+    "id": "poster-photo",
+    "name": "Pôster em moldura",
+    "file": "framed-poster.png",
+    "kind": "generated-photographic-scene",
+    "width": 1672,
+    "height": 941,
+    "surfaceCoordinates": "image-pixels-top-left-clockwise",
+    "surfaces": [{"id":"poster","name":"Área impressa","corners":[{"x":588,"y":64},{"x":1088,"y":54},{"x":1088,"y":812},{"x":588,"y":795}]}]
+  },
+  {
+    "id": "laptop-photo",
+    "name": "Notebook no estúdio",
+    "file": "laptop.png",
+    "kind": "generated-photographic-scene",
+    "width": 1672,
+    "height": 941,
+    "surfaceCoordinates": "image-pixels-top-left-clockwise",
+    "surfaces": [{"id":"display","name":"Tela","corners":[{"x":466,"y":125},{"x":1166,"y":99},{"x":1188,"y":527},{"x":487,"y":565}]}]
+  }
+]

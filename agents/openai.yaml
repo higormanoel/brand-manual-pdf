@@ -1,4 +1,4 @@
 interface:
-  display_name: "Brand Manual PDF"
-  short_description: "Create complete brand guidelines PDFs"
-  default_prompt: "Create a brand manual PDF for my brand"
+  display_name: "Marquio"
+  short_description: "Create and edit brand manuals in Marquio Studio"
+  default_prompt: "Use $marquio to prepare an editable brand manual and review it in Studio before PDF export."

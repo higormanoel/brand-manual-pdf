@@ -1,0 +1,798 @@
+{
+  "schemaVersion": 1,
+  "id": "project-aurora-demo",
+  "title": "Aurora — Manual de identidade",
+  "revision": 0,
+  "brief": {
+    "purpose": "Organizar uma identidade fictícia acolhedora e consistente para cafés, embalagens e comunicação de bairro.",
+    "audience": "Pessoas que frequentam cafés de bairro e buscam cafés de origem com informação clara.",
+    "positioning": "Café de origem que transforma pequenas pausas em presença.",
+    "personality": [
+      "acolhedora",
+      "serena",
+      "curiosa",
+      "cuidadosa"
+    ],
+    "deliverables": [
+      "Manual de identidade",
+      "Cartão",
+      "Embalagem de café",
+      "Comunicação digital"
+    ],
+    "notes": "Projeto demonstrativo original. Marca inteiramente fictícia."
+  },
+  "brand": {
+    "name": "Aurora",
+    "tagline": "Café & presença",
+    "description": "Torrefação e café de bairro fictícios, criados exclusivamente para demonstração.",
+    "fictitious": true,
+    "values": [
+      "Origem",
+      "Cuidado",
+      "Presença"
+    ],
+    "colors": [
+      {
+        "id": "forest",
+        "name": "Floresta",
+        "hex": "#283E36",
+        "role": "primary",
+        "usage": "Fundos institucionais e assinatura principal.",
+        "origin": {
+          "kind": "fixture",
+          "description": "Conteúdo original criado para uma marca fictícia de demonstração."
+        },
+        "approval": {
+          "status": "approved"
+        }
+      },
+      {
+        "id": "cream",
+        "name": "Linho",
+        "hex": "#F6F0E7",
+        "role": "neutral",
+        "usage": "Respiro editorial e base de leitura.",
+        "origin": {
+          "kind": "fixture",
+          "description": "Conteúdo original criado para uma marca fictícia de demonstração."
+        },
+        "approval": {
+          "status": "approved"
+        }
+      },
+      {
+        "id": "clay",
+        "name": "Barro",
+        "hex": "#C17042",
+        "role": "accent",
+        "usage": "Chamadas e pontos de calor.",
+        "origin": {
+          "kind": "fixture",
+          "description": "Conteúdo original criado para uma marca fictícia de demonstração."
+        },
+        "approval": {
+          "status": "approved"
+        }
+      },
+      {
+        "id": "sage",
+        "name": "Sálvia",
+        "hex": "#A8AD91",
+        "role": "secondary",
+        "usage": "Apoio e identificação de origens.",
+        "origin": {
+          "kind": "fixture",
+          "description": "Conteúdo original criado para uma marca fictícia de demonstração."
+        },
+        "approval": {
+          "status": "approved"
+        }
+      },
+      {
+        "id": "sand",
+        "name": "Areia",
+        "hex": "#E6C493",
+        "role": "secondary",
+        "usage": "Planos de luz e composição.",
+        "origin": {
+          "kind": "fixture",
+          "description": "Conteúdo original criado para uma marca fictícia de demonstração."
+        },
+        "approval": {
+          "status": "approved"
+        }
+      }
+    ],
+    "typography": [
+      {
+        "id": "font-display",
+        "family": "Libre Baskerville",
+        "role": "display",
+        "weights": [
+          400,
+          700
+        ],
+        "fallback": "serif",
+        "license": "SIL Open Font License 1.1; arquivo original incluído. Consulte public/licenses/LibreBaskerville-OFL.txt.",
+        "origin": {
+          "kind": "fixture",
+          "description": "Libre Baskerville original, sem modificações, de google/fonts; commit e SHA-256 em font-provenance.json."
+        },
+        "approval": {
+          "status": "approved"
+        },
+        "assetId": "asset-font-display"
+      },
+      {
+        "id": "font-body",
+        "family": "Inter",
+        "role": "body",
+        "weights": [
+          400,
+          700
+        ],
+        "fallback": "sans-serif",
+        "license": "SIL Open Font License 1.1; incluída pelo aplicativo via @fontsource/inter. Consulte public/licenses/Inter-OFL.txt.",
+        "origin": {
+          "kind": "fixture",
+          "description": "Inter distribuída pelo aplicativo via @fontsource/inter; independente das fontes editoriais."
+        },
+        "approval": {
+          "status": "approved"
+        }
+      }
+    ],
+    "logos": [
+      {
+        "id": "logo-primary",
+        "name": "Assinatura principal",
+        "assetId": "asset-logo",
+        "variant": "primary",
+        "background": "light",
+        "clearSpace": 0.25,
+        "minWidth": 180,
+        "origin": {
+          "kind": "fixture",
+          "description": "Conteúdo original criado para uma marca fictícia de demonstração."
+        },
+        "approval": {
+          "status": "approved"
+        }
+      },
+      {
+        "id": "logo-light",
+        "name": "Assinatura clara",
+        "assetId": "asset-logo-reversed",
+        "variant": "reversed",
+        "background": "dark",
+        "origin": {
+          "kind": "fixture",
+          "description": "Conteúdo original criado para uma marca fictícia de demonstração."
+        },
+        "approval": {
+          "status": "approved"
+        }
+      },
+      {
+        "id": "logo-symbol",
+        "name": "Símbolo do amanhecer",
+        "assetId": "asset-symbol",
+        "variant": "symbol",
+        "background": "light",
+        "origin": {
+          "kind": "fixture",
+          "description": "Conteúdo original criado para uma marca fictícia de demonstração."
+        },
+        "approval": {
+          "status": "approved"
+        }
+      }
+    ],
+    "definitions": [
+      {
+        "term": "Presença",
+        "definition": "Atenção às pessoas, ao tempo e aos pequenos rituais."
+      }
+    ],
+    "narratives": [
+      {
+        "title": "O começo tem espaço",
+        "text": "Todo dia oferece um novo começo. Entre o primeiro aroma e a última conversa, Aurora abre espaço para estar presente."
+      }
+    ],
+    "mantras": [
+      "Há tempo para começar.",
+      "Bom café, presença de verdade."
+    ],
+    "dictionary": [
+      {
+        "term": "origem",
+        "meaning": "Caminho do grão, comunicado com clareza.",
+        "usage": "Apresentar lugar e características sem jargões."
+      },
+      {
+        "term": "pausa",
+        "meaning": "Tempo de presença, sem pressa.",
+        "usage": "Convite que respeita o ritmo de cada pessoa."
+      }
+    ],
+    "voice": {
+      "traits": [
+        "calma",
+        "próxima",
+        "clara"
+      ],
+      "do": [
+        "Usar verbos concretos.",
+        "Explicar termos quando necessário."
+      ],
+      "avoid": [
+        "Urgência artificial.",
+        "Superlativos sem evidência."
+      ],
+      "sample": "Seu café de hoje pode começar com uma boa conversa.",
+      "modes": [
+        {
+          "id": "voice-invite",
+          "name": "Convite",
+          "description": "Calor humano nas chamadas.",
+          "do": [
+            "Venha com calma."
+          ],
+          "dont": [
+            "Corra antes que acabe!"
+          ]
+        },
+        {
+          "id": "voice-guide",
+          "name": "Orientação",
+          "do": [
+            "Escolha o perfil que combina com seu preparo."
+          ],
+          "dont": [
+            "Você precisa entender de café."
+          ]
+        }
+      ]
+    }
+  },
+  "editorial": {
+    "displayFontFamily": "Inter",
+    "bodyFontFamily": "Inter",
+    "captionFontFamily": "Inter"
+  },
+  "credits": {
+    "studio": "Marquio — projeto de demonstração",
+    "license": "CC0 para textos e arte original; fontes Libre Baskerville e Inter sob SIL OFL 1.1.",
+    "notes": "Marca fictícia. Libre Baskerville incluída no manifesto; Inter incluída pelo aplicativo. SVGs usam contornos das mesmas fontes abertas."
+  },
+  "assets": [
+    {
+      "id": "asset-landscape",
+      "name": "Paisagem ao amanhecer",
+      "mimeType": "image/svg+xml",
+      "path": "assets/landscape.svg",
+      "hash": "f2f00d97900413b4c6104fe2c68f15f79ce4413d5fce594345e95c0dc2006683",
+      "origin": {
+        "kind": "fixture",
+        "description": "Conteúdo original criado para uma marca fictícia de demonstração."
+      },
+      "license": "CC0 — criação original para esta demonstração."
+    },
+    {
+      "id": "asset-logo-reversed",
+      "name": "Assinatura clara",
+      "mimeType": "image/svg+xml",
+      "path": "assets/logo-reversed.svg",
+      "hash": "1c971b1c70a98a47445756548e0dceacbd25cfd7c0417c4196e2efc94f5dcb59",
+      "origin": {
+        "kind": "fixture",
+        "description": "Conteúdo original criado para uma marca fictícia de demonstração."
+      },
+      "license": "CC0 — criação original para esta demonstração."
+    },
+    {
+      "id": "asset-logo",
+      "name": "Assinatura principal",
+      "mimeType": "image/svg+xml",
+      "path": "assets/logo.svg",
+      "hash": "a42bca353a76023bb5b44e3d03eae6eaa963f8215850a525765c7d209e381577",
+      "origin": {
+        "kind": "fixture",
+        "description": "Conteúdo original criado para uma marca fictícia de demonstração."
+      },
+      "license": "CC0 — criação original para esta demonstração."
+    },
+    {
+      "id": "asset-pattern",
+      "name": "Trama de horizontes",
+      "mimeType": "image/svg+xml",
+      "path": "assets/pattern.svg",
+      "hash": "618b9db22234770f77b277fe5d8d10ba072c7d9cb1c76b23dccd6b3359d5bda8",
+      "origin": {
+        "kind": "fixture",
+        "description": "Conteúdo original criado para uma marca fictícia de demonstração."
+      },
+      "license": "CC0 — criação original para esta demonstração."
+    },
+    {
+      "id": "asset-symbol",
+      "name": "Símbolo do amanhecer",
+      "mimeType": "image/svg+xml",
+      "path": "assets/symbol.svg",
+      "hash": "a58b1e7900cc0e62f1f13316d14adce947431b6e4c31a9bcafc2900df8e9df6a",
+      "origin": {
+        "kind": "fixture",
+        "description": "Conteúdo original criado para uma marca fictícia de demonstração."
+      },
+      "license": "CC0 — criação original para esta demonstração."
+    },
+    {
+      "id": "asset-font-display",
+      "name": "Libre Baskerville — fonte variável original",
+      "mimeType": "font/ttf",
+      "path": "assets/LibreBaskerville-Variable.ttf",
+      "hash": "05a95421961341c5b2556285e8415df9db27dab4f4abe22b446b3c6a8b916c5d",
+      "origin": {
+        "kind": "fixture",
+        "description": "Arquivo original, sem modificações, de google/fonts; procedência em font-provenance.json."
+      },
+      "license": "SIL Open Font License 1.1; public/licenses/LibreBaskerville-OFL.txt."
+    },
+    {
+      "id": "asset-font-display-license",
+      "name": "Libre Baskerville — licença SIL OFL 1.1",
+      "mimeType": "text/plain",
+      "path": "assets/LibreBaskerville-OFL.txt",
+      "hash": "3624eddd4c8f8a908130a417ae7cd089c9da69899c4e0ca1a5217d0a6fae16fd",
+      "origin": {
+        "kind": "fixture",
+        "description": "Cópia integral e sem modificações do OFL oficial que acompanha o TTF, preservada no projeto portátil."
+      },
+      "license": "SIL Open Font License 1.1."
+    }
+  ],
+  "sections": [
+    {
+      "id": "section-introduction",
+      "kind": "introduction",
+      "title": "Apresentação",
+      "enabled": true,
+      "status": "approved",
+      "content": {
+        "heading": "Uma pausa que aproxima.",
+        "paragraphs": [
+          "Aurora é uma torrefação e café de bairro inteiramente fictícios. Este manual demonstra como uma identidade pode se tornar um sistema consistente, acolhedor e utilizável.",
+          "A marca celebra o começo do dia e os encontros simples ao redor de um bom café. Nenhuma regra deste exemplo se aplica a uma organização real."
+        ],
+        "rules": [
+          "Esta identidade é um exemplo fictício para demonstração."
+        ],
+        "assetIds": [],
+        "colorIds": [],
+        "typographyIds": []
+      },
+      "origin": {
+        "kind": "fixture",
+        "description": "Conteúdo original criado para uma marca fictícia de demonstração."
+      },
+      "approval": {
+        "status": "approved"
+      }
+    },
+    {
+      "id": "section-brand-strategy",
+      "kind": "brand-strategy",
+      "title": "Posicionamento",
+      "enabled": true,
+      "status": "approved",
+      "content": {
+        "heading": "Bom café, presença de verdade.",
+        "paragraphs": [
+          "Para pessoas que buscam pequenos rituais de atenção, Aurora oferece cafés de origem e encontros sem pressa. O cuidado aparece na seleção dos grãos, na conversa e na clareza de cada informação.",
+          "A promessa é transformar uma pausa cotidiana em um momento de presença. A linguagem é simples e calorosa, sem transformar o café em um conhecimento inacessível."
+        ],
+        "rules": [
+          "Acolher antes de explicar.",
+          "Informar a origem com clareza.",
+          "Valorizar o tempo de quem chega."
+        ],
+        "assetIds": [],
+        "colorIds": [],
+        "typographyIds": []
+      },
+      "origin": {
+        "kind": "fixture",
+        "description": "Conteúdo original criado para uma marca fictícia de demonstração."
+      },
+      "approval": {
+        "status": "approved"
+      }
+    },
+    {
+      "id": "section-archetypes",
+      "kind": "archetypes",
+      "title": "Arquétipos",
+      "enabled": true,
+      "status": "approved",
+      "content": {
+        "heading": "O cuidado encontra a descoberta.",
+        "paragraphs": [
+          "Como escolha criativa desta marca fictícia, a postura de cuidador orienta o acolhimento; a curiosidade do explorador abre espaço para conhecer novas origens.",
+          "Esses arquétipos apoiam a criação e não descrevem pessoas nem substituem pesquisa com o público."
+        ],
+        "rules": [
+          "Cuidado é um gesto concreto.",
+          "Curiosidade convida, nunca exige."
+        ],
+        "assetIds": [],
+        "colorIds": [],
+        "typographyIds": []
+      },
+      "origin": {
+        "kind": "fixture",
+        "description": "Conteúdo original criado para uma marca fictícia de demonstração."
+      },
+      "approval": {
+        "status": "approved"
+      }
+    },
+    {
+      "id": "section-pillars",
+      "kind": "pillars",
+      "title": "Pilares da marca",
+      "enabled": true,
+      "status": "approved",
+      "content": {
+        "heading": "Origem. Cuidado. Presença.",
+        "paragraphs": [
+          "Origem significa reconhecer o caminho do grão com informações compreensíveis. Cuidado significa fazer bem o que é pequeno e repetido.",
+          "Presença é uma relação com o agora: uma conversa, uma xícara e a liberdade de parar por alguns minutos."
+        ],
+        "rules": [
+          "Apresentar cada origem com clareza.",
+          "Projetar encontros com atenção."
+        ],
+        "assetIds": [],
+        "colorIds": [],
+        "typographyIds": []
+      },
+      "origin": {
+        "kind": "fixture",
+        "description": "Conteúdo original criado para uma marca fictícia de demonstração."
+      },
+      "approval": {
+        "status": "approved"
+      }
+    },
+    {
+      "id": "section-voice",
+      "kind": "voice",
+      "title": "Voz e linguagem",
+      "enabled": true,
+      "status": "approved",
+      "content": {
+        "heading": "Convites leves, informações claras.",
+        "paragraphs": [
+          "Falamos como quem recebe alguém à mesa: com calma, proximidade e atenção. Usamos frases curtas e verbos concretos; explicamos termos do café quando eles ajudam a escolha.",
+          "Em convites, a voz é calorosa. Em instruções, é precisa. Em situações de problema, é responsável e objetiva."
+        ],
+        "rules": [
+          "Dizer “Encontre seu café de hoje”.",
+          "Evitar urgência artificial e superlativos sem evidência.",
+          "Dar uma próxima ação simples quando houver um problema."
+        ],
+        "assetIds": [],
+        "colorIds": [],
+        "typographyIds": []
+      },
+      "origin": {
+        "kind": "fixture",
+        "description": "Conteúdo original criado para uma marca fictícia de demonstração."
+      },
+      "approval": {
+        "status": "approved"
+      }
+    },
+    {
+      "id": "section-logo",
+      "kind": "logo",
+      "title": "Marca e assinaturas",
+      "enabled": true,
+      "status": "approved",
+      "content": {
+        "heading": "Um horizonte aberto.",
+        "paragraphs": [
+          "O símbolo reúne um sol em ascensão e uma linha de horizonte. A assinatura tipográfica traz uma cadência serena e próxima, com letras em caixa baixa.",
+          "A versão principal é verde Floresta sobre Linho. A versão clara atende fundos escuros. O símbolo isolado identifica espaços pequenos quando o nome já está presente no contexto."
+        ],
+        "rules": [
+          "Usar os arquivos fornecidos.",
+          "Preservar proporção e alinhamentos."
+        ],
+        "assetIds": [
+          "asset-logo",
+          "asset-logo-reversed",
+          "asset-symbol"
+        ],
+        "colorIds": [],
+        "typographyIds": []
+      },
+      "origin": {
+        "kind": "fixture",
+        "description": "Conteúdo original criado para uma marca fictícia de demonstração."
+      },
+      "approval": {
+        "status": "approved"
+      }
+    },
+    {
+      "id": "section-clear-space",
+      "kind": "clear-space",
+      "title": "Área de proteção e redução",
+      "enabled": true,
+      "status": "approved",
+      "content": {
+        "heading": "Deixe a marca respirar.",
+        "paragraphs": [
+          "Neste exemplo fictício, o módulo de proteção corresponde a um quarto da altura do símbolo. Nenhum texto, borda ou objeto deve invadir essa margem.",
+          "A assinatura completa foi pensada para ter ao menos 180 pixels de largura em tela. Abaixo disso, prefira o símbolo e mantenha o nome no contexto."
+        ],
+        "rules": [
+          "Proteção mínima: 0,25 da altura do símbolo.",
+          "Largura mínima da assinatura: 180 px."
+        ],
+        "assetIds": [],
+        "colorIds": [],
+        "typographyIds": []
+      },
+      "origin": {
+        "kind": "fixture",
+        "description": "Conteúdo original criado para uma marca fictícia de demonstração."
+      },
+      "approval": {
+        "status": "approved"
+      }
+    },
+    {
+      "id": "section-incorrect-usage",
+      "kind": "incorrect-usage",
+      "title": "Usos incorretos",
+      "enabled": true,
+      "status": "approved",
+      "content": {
+        "heading": "Consistência preserva reconhecimento.",
+        "paragraphs": [
+          "A marca mantém sua força quando proporções, cores e contraste são respeitados. Os arquivos originais evitam reconstruções imprecisas.",
+          "Em fundos complexos, use uma área de cor sólida que garanta leitura e margem de proteção."
+        ],
+        "rules": [
+          "Não distorcer ou rotacionar a assinatura.",
+          "Não acrescentar sombras ou contornos.",
+          "Não substituir a cor por tons fora da paleta."
+        ],
+        "assetIds": [],
+        "colorIds": [],
+        "typographyIds": []
+      },
+      "origin": {
+        "kind": "fixture",
+        "description": "Conteúdo original criado para uma marca fictícia de demonstração."
+      },
+      "approval": {
+        "status": "approved"
+      }
+    },
+    {
+      "id": "section-photography",
+      "kind": "photography",
+      "title": "Direção de imagens",
+      "enabled": true,
+      "status": "approved",
+      "content": {
+        "heading": "A luz revela o cotidiano.",
+        "paragraphs": [
+          "A direção fotográfica procura luz natural, texturas táteis e gestos espontâneos: mãos preparando uma xícara, uma mesa compartilhada, a superfície do grão.",
+          "A paisagem ilustrada deste exemplo representa o amanhecer de forma abstrata. Ela é uma criação original e não é apresentada como fotografia documental ou retrato de uma origem real."
+        ],
+        "rules": [
+          "Priorizar luz lateral suave.",
+          "Equilibrar detalhe e espaço de respiro.",
+          "Evitar poses artificiais e saturação excessiva."
+        ],
+        "assetIds": [
+          "asset-landscape"
+        ],
+        "colorIds": [],
+        "typographyIds": []
+      },
+      "origin": {
+        "kind": "fixture",
+        "description": "Conteúdo original criado para uma marca fictícia de demonstração."
+      },
+      "approval": {
+        "status": "approved"
+      }
+    },
+    {
+      "id": "section-colors",
+      "kind": "colors",
+      "title": "Paleta de cores",
+      "enabled": true,
+      "status": "approved",
+      "content": {
+        "heading": "Terra, luz e folha.",
+        "paragraphs": [
+          "Floresta traz profundidade e reconhecimento. Linho oferece uma base clara, quente e confortável. Barro marca os pequenos pontos de atenção.",
+          "Sálvia e Areia ampliam o repertório em apoio. As proporções variam conforme o suporte; contraste e leitura orientam cada combinação."
+        ],
+        "rules": [
+          "Preferir Floresta com Linho para textos longos.",
+          "Reservar Barro para detalhes e chamadas."
+        ],
+        "assetIds": [],
+        "colorIds": [
+          "forest",
+          "cream",
+          "clay",
+          "sage",
+          "sand"
+        ],
+        "typographyIds": []
+      },
+      "origin": {
+        "kind": "fixture",
+        "description": "Conteúdo original criado para uma marca fictícia de demonstração."
+      },
+      "approval": {
+        "status": "approved"
+      }
+    },
+    {
+      "id": "section-typography",
+      "kind": "typography",
+      "title": "Tipografia",
+      "enabled": true,
+      "status": "approved",
+      "content": {
+        "heading": "Expressão no título, clareza na leitura.",
+        "paragraphs": [
+          "Libre Baskerville desenha os títulos com um ritmo editorial acolhedor. Inter organiza as informações práticas com clareza.",
+          "As fontes editoriais do manual são configuradas separadamente das famílias da marca. Libre Baskerville está incluída no projeto; Inter acompanha o aplicativo. Ambas usam a licença SIL OFL 1.1."
+        ],
+        "rules": [
+          "Usar Libre Baskerville em chamadas curtas.",
+          "Usar Inter nos textos corridos e informações de serviço.",
+          "Evitar blocos longos em caixa alta."
+        ],
+        "assetIds": [],
+        "colorIds": [],
+        "typographyIds": [
+          "font-display",
+          "font-body"
+        ]
+      },
+      "origin": {
+        "kind": "fixture",
+        "description": "Conteúdo original criado para uma marca fictícia de demonstração."
+      },
+      "approval": {
+        "status": "approved"
+      }
+    },
+    {
+      "id": "section-graphic-elements",
+      "kind": "graphic-elements",
+      "title": "Elementos gráficos",
+      "enabled": true,
+      "status": "approved",
+      "content": {
+        "heading": "Horizontes que se repetem.",
+        "paragraphs": [
+          "Arcos abertos e linhas horizontais ampliam o gesto do símbolo. O padrão deve permanecer leve, com respiro suficiente para não competir com a informação.",
+          "As ilustrações usam planos de cor e curvas suaves para sugerir paisagens, sempre deixando claro seu caráter ilustrado."
+        ],
+        "rules": [
+          "Limitar a trama a um plano de apoio por composição.",
+          "Preservar escala e espessura coerentes."
+        ],
+        "assetIds": [
+          "asset-pattern"
+        ],
+        "colorIds": [],
+        "typographyIds": []
+      },
+      "origin": {
+        "kind": "fixture",
+        "description": "Conteúdo original criado para uma marca fictícia de demonstração."
+      },
+      "approval": {
+        "status": "approved"
+      }
+    },
+    {
+      "id": "section-applications",
+      "kind": "applications",
+      "title": "Mídias e aplicações",
+      "enabled": true,
+      "status": "approved",
+      "content": {
+        "heading": "Uma identidade que vive no dia a dia.",
+        "paragraphs": [
+          "Cartões, embalagens e comunicação de balcão compartilham a mesma hierarquia: marca reconhecível, mensagem curta e informação útil.",
+          "Os exemplos de aplicação devem mostrar o sistema em uso. Fotografias de cena e arte aplicada permanecem identificadas separadamente no documento."
+        ],
+        "rules": [
+          "Adaptar a hierarquia ao formato.",
+          "Conferir contraste e margens em cada aplicação."
+        ],
+        "assetIds": [],
+        "colorIds": [],
+        "typographyIds": []
+      },
+      "origin": {
+        "kind": "fixture",
+        "description": "Conteúdo original criado para uma marca fictícia de demonstração."
+      },
+      "approval": {
+        "status": "approved"
+      }
+    },
+    {
+      "id": "section-identity-complete",
+      "kind": "identity-complete",
+      "title": "Identidade completa",
+      "enabled": true,
+      "status": "approved",
+      "content": {
+        "heading": "O sistema, em conjunto.",
+        "paragraphs": [
+          "A identidade reúne uma assinatura tranquila, cores da terra, tipografia editorial e elementos de horizonte. Cada parte contribui para o mesmo compromisso de presença.",
+          "Ao criar novas peças, comece pela intenção da mensagem, escolha poucos elementos e verifique se o resultado é acolhedor, claro e consistente."
+        ],
+        "rules": [
+          "Combinar com intenção.",
+          "Conferir o conjunto antes de publicar."
+        ],
+        "assetIds": [],
+        "colorIds": [],
+        "typographyIds": []
+      },
+      "origin": {
+        "kind": "fixture",
+        "description": "Conteúdo original criado para uma marca fictícia de demonstração."
+      },
+      "approval": {
+        "status": "approved"
+      }
+    },
+    {
+      "id": "section-credits",
+      "kind": "credits",
+      "title": "Créditos",
+      "enabled": true,
+      "status": "approved",
+      "content": {
+        "heading": "Um exemplo original e aberto.",
+        "paragraphs": [
+          "Aurora é uma marca fictícia criada exclusivamente para demonstrar o Marquio. Textos, símbolo, assinaturas, padrão e paisagem deste pacote são originais.",
+          "Os textos e a arte original são disponibilizados sob CC0. Libre Baskerville e Inter usam SIL OFL 1.1, com avisos completos na distribuição. A fonte de título acompanha o projeto; os SVGs incorporam contornos de fontes abertas."
+        ],
+        "rules": [
+          "Nenhum cliente, instituição ou pessoa real é representado."
+        ],
+        "assetIds": [],
+        "colorIds": [],
+        "typographyIds": []
+      },
+      "origin": {
+        "kind": "fixture",
+        "description": "Conteúdo original criado para uma marca fictícia de demonstração."
+      },
+      "approval": {
+        "status": "approved"
+      }
+    }
+  ],
+  "pages": []
+}
