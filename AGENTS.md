@@ -1,35 +1,26 @@
-# Marquio
+# Marquio contributor instructions
 
-Este é o repositório independente de `higormanoel/brand-manual-pdf`, evoluindo para o Marquio Studio. Não unir com o portfólio ou outros repositórios. Siga as instruções do ambiente Pessoal em `/Users/higormanoel/Projects/Pessoal/AGENTS.md` e preserve alterações de outros assistentes.
+This is the independent repository `higormanoel/brand-manual-pdf`, evolving into Marquio Studio. Preserve unrelated local changes and independent Git repositories/worktrees. Read `PRODUCT.md` and `DESIGN.md` for the approved product and visual direction. `CLAUDE.md` points to these same instructions.
 
-## Decisões do usuário
+## Product contracts
 
-Em 15/10/2026 o usuário aprovou a especificação de Marquio com editor próprio e, em seguida, o plano de implementação com subagentes. Os documentos estão em `docs/proposals/` e `docs/superpowers/plans/2026-10-15-marquio-studio.md`. Continue de onde a execução parou; não reabra as mesmas aprovações de nome, arquitetura, stack e método.
+- Every title, rule, footer, credit and application is an editable document node.
+- Fields and sections may be skipped. Preserve that choice; do not invent client facts, logos, rules or credits. Suggestions remain pending until designer approval.
+- Client identity and editorial style are separate configurations. The Studio follows familiar design-tool organization; the default manual is restrained, editorial and 16:9.
+- Editor and exporter share the render tree. Canonical geometry is 1920 × 1080; distinguish CSS pixels from PDF points. Transform origin is local top-left: translate, rotate, scale; group children use local coordinates.
+- The local server and repository own confirmed revisions. `project.marquio.json` is the immutable base, with later states in `commits/`; never read it alone as current or overwrite it directly. Consumers use `ProjectRepository.load/commit/snapshot` and revision-safe commands with commandId/expectedRevision.
+- Export an immutable snapshot of a confirmed revision. Regeneration retains recoverable manual work. Assets live outside edit history; portable files include bytes and relative paths without machine-specific paths or temporary URLs.
+- Keep browser recovery pending/confirmed states honest. IndexedDB is origin/port scoped. Browser-only provides portable backup and browser Print; validated PDF export requires the local runtime.
+- External image generation is optional. A prompt is not a generated image; a presentation illustration is not real production photography. Do not claim an unavailable provider connection, PSD, CMYK, PDF/X or full Photoshop support.
 
-Leia `PRODUCT.md` e `DESIGN.md` para produto e direção visual. A interface usa convenções familiares de editor de design; o manual usa um preset editorial neutro em 16:9. A identidade do cliente e o sistema editorial são configurações diferentes.
+## Materials and installation
 
-## Requisitos de implementação
+Use the fictitious Aurora fixture and original public mockups for demonstrations. Preserve provenance and typeface notices. Private reference documents, extracted reference images/commercial fonts and the reference author's identity must not appear in distributed code, prompts, examples, documentation or credits. Client uploads require suitable permissions and are not public fixtures.
 
-- Todos os títulos, regras, rodapés, créditos e demais elementos do manual são nós editáveis.
-- Campos e seções podem ser pulados. Não invente regras de marca, dados institucionais, logos ou responsáveis.
-- Sugestões permanecem identificadas até aprovação do designer.
-- Editor e exportador compartilham a árvore de renderização. Geometria canônica de 1920 × 1080; diferencie CSS pixels de pontos de PDF.
-- Transformações de nós usam origem local no canto superior esquerdo: translate(x,y), rotate(degrees), scale(scaleX,scaleY). Filhos de grupos estão em coordenadas locais.
-- No modo local, o servidor grava documento/assets e confirma revisão. O navegador não é a única fonte de verdade. Exportação recebe um snapshot da revisão confirmada.
-- Regeneração preserva o trabalho manual existente como versão recuperável.
-- Assets ficam fora do histórico de edição. Arquivos portáteis não dependem de URLs temporárias ou caminhos absolutos da máquina.
-- Geração externa é opcional. Um prompt pronto não é uma imagem gerada; ilustração não é fotografia de produção real.
+Preserve `legacy/SKILL.md`, `assets/template_brand_manual.html` and `scripts/generate_pdf.sh` during migration. Do not modify external installed skill checkouts as an effect of testing. Installation tests use explicit temporary roots and preserve existing skills unless force was requested. Do not publish npm packages, deploy or rename the remote as a test.
 
-## Materiais e procedência
+## Verification and collaboration
 
-A referência privada fornecida pelo usuário não pode ser distribuída no repositório. Não extrair suas imagens/fontes para o produto nem incluir o nome que o usuário explicitamente pediu para omitir. As cenas em `public/mockups/` foram geradas originalmente para este projeto e têm prompts/procedência. A marca Aurora é fictícia e seus assets são originais.
+Use the scripts in `package.json`. Unit/integration tests are `tests/**/*.test.ts`; browser tests are `tests/browser/*.spec.ts`. Build before tests using the compiled CLI/exporter. Run focused checks during changes and the relevant full checks before completion: typecheck, build, unit tests, real Chromium E2E and package dry-run. Do not claim the application or PDF export works from types or static screenshots alone.
 
-Preserve a skill/template/script legados durante a migração. Testes de instalação usam diretórios temporários, sem alterar instalações globais do usuário. Não publique pacote, faça deploy ou renomeie o repositório como efeito de testes.
-
-## Retomada e verificação
-
-Durante esta execução, o ledger local está em `.superpowers/sdd/2026-10-15-marquio-studio/progress.md`, com briefs, relatórios e revisões. Consulte também o histórico Git para não repetir tarefas concluídas. A implementação principal fica no worktree `Projetos/Marquio`, branch `codex/marquio-app`; a skill instalada é outro checkout preservado.
-
-Use os scripts reais de `package.json`. Testes unitários ficam em `tests/**/*.test.ts`; testes de navegador ficam em `tests/browser/*.spec.ts`. Rode os testes focados durante desenvolvimento e a suíte apropriada antes de declarar conclusão. Não declare app, exportação ou integração completos com base apenas em tipos ou documentação.
-
-Em execução paralela, cada agente possui seus arquivos. Não use `git add .`, não reverta alterações alheias e não edite contratos compartilhados sem coordenar com o responsável.
+When multiple assistants work here, coordinate ownership before shared-file edits. Stage only your files; do not use `git add .`, reset others' changes or rewrite existing worktree records. Record useful implementation handoffs in the task's local execution ledger when present. Product history and plans live under `docs/`; they do not override explicit current user instructions.
