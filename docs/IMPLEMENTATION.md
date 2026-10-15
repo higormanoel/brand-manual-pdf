@@ -14,7 +14,7 @@ Uploads, sugestões e omissões têm estados explícitos. Uma sugestão não vir
 
 ## Decisões tomadas durante a execução
 
-Esta tabela preserva todas as decisões registradas como `Ruling:` no ledger de execução, na ordem em que ocorreram. Nenhuma falha importante foi silenciosamente adiada.
+Esta tabela preserva todas as decisões registradas como `Ruling:` no ledger de execução, na ordem em que ocorreram, incluindo a delimitação da revisão final. Nenhuma falha importante foi silenciosamente adiada.
 
 | Decisão | Motivo | Custo ou consequência se estiver errada |
 |---|---|---|
@@ -31,6 +31,14 @@ Esta tabela preserva todas as decisões registradas como `Ruling:` no ledger de 
 | Preparar adaptadores e documentação em paralelo à integração final. | Comandos e caminhos dos hosts já estavam estáveis. | Adiar alterações compartilhadas, exemplos finais e suíte completa até o handoff. |
 | Colocar a edição de mockups já inseridos nas propriedades do Studio. | Cantos, máscara, sobreposição e imagem final também precisam continuar editáveis. | Mais testes de propriedades e histórico, preservando um único modelo de cena. |
 | Acrescentar publicação e índice atômicos ao RecoveryStore para o modo navegador. | A revisão e a gravação precisam compartilhar uma transação entre abas. | Mais superfície de armazenamento para testar e revisar, mantendo as APIs anteriores. |
+
+| Manter PSD, retoque completo, CMYK e PDF/X fora da primeira versão. | Limites já aprovados para o lançamento. | Intercâmbio PSD e conversões profissionais de impressão exigem evolução posterior. |
+| Manter contas, hospedagem, cobrança, colaboração ao vivo e marketplace fora desta entrega. | Priorizar o fluxo local aprovado. | Distribuição hospedada e colaboração simultânea continuam como trabalho separado. |
+| Não avaliar um provedor pago sem conexão como funcionalidade integrada. | Geração é opcional e nenhuma conexão é anunciada. | Cenas incluídas, uploads e prompts são os caminhos padrão disponíveis. |
+| Não publicar, implantar, renomear o remoto nem instalar globalmente como teste. | São ações de entrega; raízes temporárias validam os launchers. | Release público e instalação global real precisam de ação deliberada própria. |
+| Não acessar a referência privada, identificar sua autoria ou distribuir fontes comerciais extraídas. | Respeitar as restrições do usuário e dos materiais. | Tipografia comercial exata depende de uploads licenciados do designer. |
+| Não alegar certificação universal de hardware, queda de energia ou filesystem em rede. | O contrato suportado é um filesystem local com primitivas documentadas. | Novas plataformas e armazenamentos exigem validação independente. |
+| Manter deformação avançada de tecido, bordado e superfícies curvas fora das promessas iniciais. | Esses presets informam que trabalham com imagem final. | Exigem uma imagem final importada ou gerada externamente. |
 
 ## Evidência e limites
 
