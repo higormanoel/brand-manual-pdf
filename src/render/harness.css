@@ -1,0 +1,14 @@
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: #171717;
+  font-family: Inter, sans-serif;
+}
+* {
+  box-sizing: border-box;
+}
+::selection {
+  background: #a8c9f5;
+  color: #171717;
+}
