@@ -14,10 +14,14 @@ import {
 } from "../../core/commands";
 import { nodeBounds, unionBounds } from "../../core/geometry";
 import { IconButton } from "../editor/Toolbar";
+import { nodeDimensions, resizeTransform } from "../editor/resize";
+import { projectToQuad } from "../../mockups/projection";
+import type { ProjectionQuad } from "../../core/nodes";
 /** Local drafts permit intermediate '-', blank and decimal input. Commit only
  * valid complete values on blur, once per user edit. */
 export function NumberField({
   label,
+  caption,
   value,
   onChange,
   min,
@@ -25,6 +29,7 @@ export function NumberField({
   step = 1,
 }: {
   label: string;
+  caption?: string;
   value: number;
   onChange: (value: number) => void;
   min?: number;
@@ -34,7 +39,7 @@ export function NumberField({
   const [draft, setDraft] = useState<string | null>(null);
   return (
     <label className="number-field">
-      <span>{label}</span>
+      <span>{caption ?? label}</span>
       <input
         aria-label={label}
         type="number"
@@ -152,6 +157,25 @@ export function PropertiesPanel({
       ]);
       return;
     }
+    if (key === "width" || key === "height") {
+      onCommands(
+        locations.map((l) => ({
+          type: "node.update",
+          pageId: page.id,
+          nodeId: l.node.id,
+          patch: {
+            transform: resizeTransform(l.node, {
+              ...nodeDimensions(l.node),
+              [key]: value,
+            }),
+            ...(l.node.type === "mockup"
+              ? { approval: { status: "pending" as const } }
+              : {}),
+          },
+        })),
+      );
+      return;
+    }
     patch({ transform: { [key]: value } });
   };
   return (
@@ -188,7 +212,9 @@ export function PropertiesPanel({
                     value={
                       multiple && (key === "x" || key === "y")
                         ? bounds![key]
-                        : node.transform[key]
+                        : key === "width" || key === "height"
+                          ? nodeDimensions(node)[key]
+                          : node.transform[key]
                     }
                     min={key === "width" || key === "height" ? 1 : undefined}
                     onChange={(v) => geometry(key, v)}
@@ -219,7 +245,14 @@ export function PropertiesPanel({
               <ShapeProperties node={node} onPatch={patch} />
             )}
             {!multiple && node.type === "mockup" && (
-              <MockupProperties node={node} project={project} onPatch={patch} />
+              <MockupProperties
+                key={node.id}
+                node={node}
+                project={project}
+                pageId={page.id}
+                onPatch={patch}
+                onCommands={onCommands}
+              />
             )}
           </fieldset>
           <div className="object-actions">
@@ -455,7 +488,9 @@ function ImageProperties({
   node,
   project,
   onPatch,
+  assetLabel = "Arquivo da imagem",
 }: {
+  assetLabel?: string;
   node: ImageNode;
   project: BrandProject;
   onPatch: (patch: NodePatch) => void;
@@ -465,7 +500,7 @@ function ImageProperties({
     <>
       <legend>Imagem</legend>
       <AssetSelect
-        label="Arquivo da imagem"
+        label={assetLabel}
         value={node.assetId}
         project={project}
         onChange={(assetId) => onPatch({ assetId })}
@@ -570,7 +605,9 @@ function AssetSelect({
   value,
   project,
   onChange,
+  allowEmpty = false,
 }: {
+  allowEmpty?: boolean;
   label: string;
   value: string;
   project: BrandProject;
@@ -584,8 +621,8 @@ function AssetSelect({
         value={value}
         onChange={(e) => onChange(e.target.value)}
       >
-        <option value="" disabled>
-          Selecionar arquivo
+        <option value="" disabled={!allowEmpty}>
+          {allowEmpty ? "Sem arquivo" : "Selecionar arquivo"}
         </option>
         {project.assets
           .filter((a) => a.mimeType.startsWith("image/"))
@@ -601,29 +638,204 @@ function AssetSelect({
 function MockupProperties({
   node,
   project,
+  pageId,
   onPatch,
+  onCommands,
 }: {
   node: MockupNode;
   project: BrandProject;
+  pageId: string;
   onPatch: (patch: NodePatch) => void;
+  onCommands: (commands: DocumentCommand[]) => void;
 }) {
+  const approvedPatch = (patch: NodePatch) =>
+    onPatch({ ...patch, approval: { status: "pending" } });
+  const optionalAsset = (
+    field:
+      "sceneAssetId" | "backgroundAssetId" | "maskAssetId" | "overlayAssetId",
+    value: string,
+  ) => {
+    if (value) {
+      approvedPatch({ [field]: value });
+      return;
+    }
+    // Undefined fields disappear in JSON command transport. A guarded restore
+    // expresses removal explicitly without changing the shared command schema.
+    const snapshot = structuredClone(project);
+    const location = findNode(snapshot, pageId, node.id);
+    if (!location || location.node.type !== "mockup") return;
+    delete location.node[field];
+    location.node.approval = { status: "pending" };
+    location.node.manuallyEdited = true;
+    onCommands([{ type: "project.restore", project: snapshot }]);
+  };
+  const finalImage =
+    !node.quad && !node.artworkAssetId
+      ? node.children.find((child) => child.type === "image")
+      : undefined;
   return (
     <>
       <legend>Aplicação</legend>
-      {node.artworkAssetId && (
-        <AssetSelect
-          label="Arte da aplicação"
-          value={node.artworkAssetId}
+      {finalImage?.type === "image" ? (
+        <ImageProperties
+          node={finalImage}
           project={project}
-          onChange={(artworkAssetId) =>
-            onPatch({ artworkAssetId, approval: { status: "pending" } })
-          }
+          assetLabel="Imagem final da aplicação"
+          onPatch={(patch) => {
+            const source =
+              "assetId" in patch
+                ? project.assets.find((asset) => asset.id === patch.assetId)
+                : undefined;
+            onCommands([
+              {
+                type: "node.update",
+                pageId,
+                nodeId: finalImage.id,
+                patch: {
+                  ...patch,
+                  ...(source
+                    ? { origin: { ...source.origin, assetId: source.id } }
+                    : {}),
+                  approval: { status: "pending" },
+                },
+              },
+              {
+                type: "node.update",
+                pageId,
+                nodeId: node.id,
+                patch: { approval: { status: "pending" } },
+              },
+            ]);
+          }}
         />
+      ) : (
+        <>
+          <AssetSelect
+            label="Arte da aplicação"
+            value={node.artworkAssetId ?? ""}
+            project={project}
+            onChange={(artworkAssetId) => approvedPatch({ artworkAssetId })}
+          />
+          {(
+            [
+              "sceneAssetId",
+              "backgroundAssetId",
+              "maskAssetId",
+              "overlayAssetId",
+            ] as const
+          ).map((field, index) => (
+            <AssetSelect
+              key={field}
+              label={
+                [
+                  "Cena da aplicação",
+                  "Fundo da aplicação",
+                  "Máscara da aplicação",
+                  "Sobreposição da aplicação",
+                ][index]
+              }
+              value={node[field] ?? ""}
+              allowEmpty
+              project={project}
+              onChange={(value) => optionalAsset(field, value)}
+            />
+          ))}
+          {node.quad ? (
+            <QuadProperties
+              key={JSON.stringify(node.quad)}
+              node={node}
+              onApply={(quad) => approvedPatch({ quad })}
+            />
+          ) : (
+            <button
+              onClick={() =>
+                approvedPatch({
+                  quad: [
+                    { x: 0, y: 0 },
+                    { x: node.transform.width, y: 0 },
+                    { x: node.transform.width, y: node.transform.height },
+                    { x: 0, y: node.transform.height },
+                  ],
+                })
+              }
+            >
+              Definir perspectiva
+            </button>
+          )}
+        </>
       )}
       <p className="control-note">
-        A troca da arte preserva cantos, máscara e cena. Revise a composição
-        antes de aprovar.
+        Arquivos são preservados no projeto. Importe novos arquivos em Assets e
+        selecione-os aqui. Alterar a aplicação exige nova aprovação.
       </p>
+    </>
+  );
+}
+function QuadProperties({
+  node,
+  onApply,
+}: {
+  node: MockupNode;
+  onApply: (quad: ProjectionQuad) => void;
+}) {
+  const [quad, setQuad] = useState<ProjectionQuad>(() =>
+    structuredClone(node.quad!),
+  );
+  const [error, setError] = useState("");
+  const names = [
+    "Canto superior esquerdo",
+    "Canto superior direito",
+    "Canto inferior direito",
+    "Canto inferior esquerdo",
+  ];
+  return (
+    <>
+      <legend>Perspectiva</legend>
+      <p className="control-note">
+        Coordenadas locais da cena · {node.transform.width} ×{" "}
+        {node.transform.height}. A escala do objeto mantém os quatro cantos
+        registrados.
+      </p>
+      <p className="control-note">
+        1: superior esquerdo · 2: superior direito · 3: inferior direito · 4:
+        inferior esquerdo.
+      </p>
+      {quad.map((point, index) => (
+        <div className="fields-grid" key={index}>
+          {(["x", "y"] as const).map((axis) => (
+            <NumberField
+              key={axis}
+              label={`${names[index]} ${axis.toUpperCase()}`}
+              caption={`${index + 1} · ${axis.toUpperCase()}`}
+              value={point[axis]}
+              min={0}
+              max={axis === "x" ? node.transform.width : node.transform.height}
+              onChange={(value) =>
+                setQuad(
+                  (previous) =>
+                    previous.map((p, i) =>
+                      i === index ? { ...p, [axis]: value } : p,
+                    ) as ProjectionQuad,
+                )
+              }
+            />
+          ))}
+        </div>
+      ))}
+      {error && <p role="alert">{error}</p>}
+      <button
+        onClick={() => {
+          try {
+            projectToQuad(quad);
+            setError("");
+            onApply(quad);
+          } catch (error) {
+            setError(error instanceof Error ? error.message : String(error));
+          }
+        }}
+      >
+        Aplicar perspectiva
+      </button>
     </>
   );
 }

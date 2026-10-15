@@ -6,11 +6,7 @@ import {
   type DocumentCommand,
   type NodeLocation,
 } from "../../core/commands";
-import {
-  documentDeltaToLocal,
-  transformPoint,
-  transformMatrix,
-} from "../../core/geometry";
+import { documentDeltaToLocal } from "../../core/geometry";
 import type { AssetResolver } from "../../render/NodeRenderer";
 import { Artboard } from "../../render/Artboard";
 import {
@@ -19,6 +15,7 @@ import {
   type Handle,
 } from "./SelectionOverlay";
 import type { Tool } from "./Toolbar";
+import { resizeTransform } from "./resize";
 interface Props {
   project: BrandProject;
   page: Page;
@@ -122,11 +119,17 @@ export function EditorCanvas({
       ]);
       const west = handle.includes("w"),
         north = handle.includes("n");
-      const width = Math.max(1, t.width + (west ? -local.x : local.x)),
-        height = Math.max(1, t.height + (north ? -local.y : local.y));
-      const shift = transformPoint(
-        { x: west ? t.width - width : 0, y: north ? t.height - height : 0 },
-        transformMatrix({ ...t, x: 0, y: 0 }),
+      const width = t.width + (west ? -local.x : local.x),
+        height = t.height + (north ? -local.y : local.y);
+      const container =
+        location.node.type === "group" || location.node.type === "mockup";
+      const transform = resizeTransform(
+        location.node,
+        {
+          width: Math.max(1, width * (container ? Math.abs(t.scaleX) : 1)),
+          height: Math.max(1, height * (container ? Math.abs(t.scaleY) : 1)),
+        },
+        { x: west ? 1 : 0, y: north ? 1 : 0 },
       );
       next = [
         {
@@ -134,7 +137,10 @@ export function EditorCanvas({
           pageId: page.id,
           nodeId: location.node.id,
           patch: {
-            transform: { width, height, x: t.x + shift.x, y: t.y + shift.y },
+            transform,
+            ...(location.node.type === "mockup"
+              ? { approval: { status: "pending" as const } }
+              : {}),
           },
         },
       ];

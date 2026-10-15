@@ -33,14 +33,15 @@ export function SelectionOverlay({
   return (
     <div className="selection-overlays">
       {locations
-        .filter((l) => l.node.visible)
+        .filter((l) => l.node.visible && l.ancestors.every((a) => a.visible))
         .map((location) => (
           <div
             key={location.node.id}
             className="selection-box"
             style={{
               ...selectionStyle(location.node, location.ancestors),
-              borderWidth: 1 / zoom,
+              borderWidth: 0,
+              outline: `${1 / zoom}px solid var(--studio-selection)`,
             }}
             data-selection-id={location.node.id}
           >
