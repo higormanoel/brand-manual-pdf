@@ -46,3 +46,22 @@ Cada tarefa teve revisão de especificação e qualidade; problemas encontrados 
 O exemplo é fictício. Não foram distribuídos o documento privado de referência, imagens extraídas, fontes comerciais extraídas ou dados de clientes. A integração usa arquivos e perfis temporários de teste, sem instalar skills globalmente nem publicar pacotes como efeito de verificação.
 
 A aceitação final combina typecheck, build, testes de unidade/integração, Chromium real, instalação dos dois launchers, inspeção do PDF e auditoria do pacote. O histórico Git preserva a implementação e suas correções; o ledger temporário de execução é removido somente depois da revisão final.
+
+## Validação da entrega em 15/10/2026
+
+Código verificado: `43d0618`. A revisão final e a revisão focada das correções terminaram sem achados abertos. O registro abaixo descreve execuções observadas, sem atribuir a um revisor testes que ele não executou.
+
+| Verificação | Resultado |
+|---|---|
+| Instalação limpa `npm ci` | Aprovada antes da rodada final; dependências permaneceram iguais. |
+| `npm run typecheck` e `npm run build` | Aprovados para o build web e a CLI Node. |
+| `npm test` | 198 testes em 29 arquivos aprovados. |
+| `CI=1 DEBUG=vite:deps npm run test:e2e` | 62 casos reais de Chrome aprovados em 57,4 segundos, com cache Vite ausente, servidor novo e sem retentativas. |
+| `npm pack --dry-run --json` | 664 arquivos; recursos necessários presentes e sem caminhos privados. |
+| Instalação dos dois agentes | Launchers reais em raízes temporárias, com espaços e diretório de execução externo; revisão canônica compartilhada e limite de symlinks conferidos. |
+| Materiais públicos | Zero ocorrência do nome excluído; 11 hashes de assets corretos no portátil; PDF pesquisável de 46 páginas, todas com 1920 × 1080 pontos. |
+| Inspeção visual | Todas as páginas renderizadas, aplicações ampliadas e visualizador PDF nativo do Chrome conferidos no aplicativo real. |
+
+A primeira rodada completa encontrou duas falhas de teste e a revisão demonstrou uma inconsistência de asset local. Foram corrigidas sem alterar a geometria do renderer ou os materiais de exemplo: URLs locais passaram a selecionar snapshots imutáveis, a prova de aplicação passou a conferir a superfície SVG visível e a dependência do harness passou a ser preparada antes da navegação. Regressões em produção conferem pixels, bytes confirmados, portátil e identidades históricas. O guia de contribuição recebeu o procedimento de criação de cenas e presets.
+
+Ambiente observado: macOS, Node 26.7.0, npm 11.19.0 e Chrome 154. Node 22 é o mínimo declarado e alvo do CI; esta rodada local não certifica uma execução em Node 22, Linux ou Windows. Não houve publicação npm, implantação, instalação global ou alteração de autenticação como teste.
