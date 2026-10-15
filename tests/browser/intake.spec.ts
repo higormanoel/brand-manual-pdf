@@ -516,3 +516,305 @@ test("provided RGB and CMYK remain editable without duplicate paragraphs or conv
     "Coordenadas fornecidas · Tinta (#123456) | RGB fornecido: 18, 52, 87 | CMYK fornecido: 70 / 40 / 0 / 30",
   ]);
 });
+
+test("removing a saved color updates owning section references atomically", async ({
+  page,
+}) => {
+  await mount(page);
+  await page
+    .getByRole("button", { name: "Paleta de cores", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Adicionar cores" }).click();
+  await page.getByLabel("Nome da cor 1", { exact: true }).fill("Tinta");
+  await page.getByLabel("HEX 1", { exact: true }).fill("#123456");
+  await page.getByRole("button", { name: "Salvar seção" }).click();
+  await page
+    .getByRole("button", { name: "Remover Cores 1", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Salvar seção" }).click();
+  expect(
+    await page.evaluate(() => ({
+      colors: window.intakeProject.brand.colors,
+      refs: window.intakeProject.sections.find((s) => s.kind === "colors")
+        ?.content?.colorIds,
+    })),
+  ).toEqual({ colors: [], refs: [] });
+  await expect(page.getByRole("alert")).toHaveCount(0);
+});
+
+test("removing saved typography clears owning refs and retains the uploaded asset", async ({
+  page,
+}) => {
+  await mount(page);
+  await page.getByRole("button", { name: "Tipografia", exact: true }).click();
+  await page.getByRole("button", { name: "Adicionar tipografia" }).click();
+  await page.getByLabel("Família 1", { exact: true }).fill("Fonte original");
+  await page
+    .getByLabel("Enviar fonte 1")
+    .setInputFiles(
+      "node_modules/@fontsource/inter/files/inter-latin-400-normal.woff2",
+    );
+  await expect(page.getByLabel("Arquivo de fonte 1")).not.toHaveValue("");
+  await page.getByRole("button", { name: "Salvar seção" }).click();
+  await page
+    .getByRole("button", { name: "Remover Tipografia 1", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Salvar seção" }).click();
+  expect(
+    await page.evaluate(() => ({
+      typography: window.intakeProject.brand.typography,
+      refs: window.intakeProject.sections.find((s) => s.kind === "typography")
+        ?.content?.typographyIds,
+      assetCount: window.intakeProject.assets.length,
+    })),
+  ).toEqual({ typography: [], refs: [], assetCount: 1 });
+});
+
+test("removal still rejects a color referenced by a different section without changing the project", async ({
+  page,
+}) => {
+  await mount(page);
+  await page
+    .getByRole("button", { name: "Paleta de cores", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Adicionar cores" }).click();
+  await page
+    .getByLabel("Nome da cor 1", { exact: true })
+    .fill("Tinta compartilhada");
+  await page.getByLabel("HEX 1", { exact: true }).fill("#123456");
+  await page.getByRole("button", { name: "Salvar seção" }).click();
+  const refs = await page.evaluate(() => ({
+    sectionId: window.intakeProject.sections[0].id,
+    colorId: window.intakeProject.brand.colors[0].id,
+  }));
+  await page.getByRole("button", { name: "Revisar sugestões" }).click();
+  await page
+    .getByLabel("Resposta estruturada")
+    .fill(
+      JSON.stringify({
+        sectionId: refs.sectionId,
+        content: {
+          colorIds: [refs.colorId],
+          summary: "Cor fornecida como referência para esta sugestão.",
+        },
+      }),
+    );
+  await page.getByRole("button", { name: "Importar sugestão" }).click();
+  await page
+    .getByRole("button", { name: "Paleta de cores", exact: true })
+    .click();
+  const before = await page.evaluate(() =>
+    JSON.stringify(window.intakeProject),
+  );
+  await page
+    .getByRole("button", { name: "Remover Cores 1", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Salvar seção" }).click();
+  await expect(page.getByRole("alert")).toContainText("Cor");
+  expect(await page.evaluate(() => JSON.stringify(window.intakeProject))).toBe(
+    before,
+  );
+});
+
+test("editing the brand name retains pending suggestion copy and its visible provenance until approval", async ({
+  page,
+}) => {
+  await mount(page);
+  const sectionId = await page.evaluate(
+    () => window.intakeProject.sections[0].id,
+  );
+  await page.getByRole("button", { name: "Revisar sugestões" }).click();
+  await page
+    .getByLabel("Resposta estruturada")
+    .fill(
+      JSON.stringify({
+        sectionId,
+        content: { summary: "Texto do agente ainda não aprovado" },
+      }),
+    );
+  await page.getByRole("button", { name: "Importar sugestão" }).click();
+  await page.getByRole("button", { name: "Apresentação", exact: true }).click();
+  await page.getByLabel("Nome da marca", { exact: true }).fill("Nome revisado");
+  await page.getByRole("button", { name: "Salvar seção" }).click();
+  expect(
+    await page.evaluate(() => window.intakeProject.sections[0]),
+  ).toMatchObject({
+    status: "suggested",
+    origin: { kind: "suggested" },
+    approval: { status: "pending" },
+    content: { summary: "Texto do agente ainda não aprovado" },
+  });
+  await expect(
+    page.getByRole("button", { name: "Apresentação", exact: true }),
+  ).toContainText("Sugestão pendente");
+  await page.getByRole("button", { name: "Revisar sugestões" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Apresentação · Sugerido, pendente" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Aprovar Apresentação" }).click();
+  expect(
+    await page.evaluate(() => window.intakeProject.sections[0]),
+  ).toMatchObject({
+    status: "approved",
+    origin: { kind: "suggested" },
+    approval: { status: "approved" },
+  });
+});
+
+test("assigning a logo preserves the pending origin of retained suggested section rules", async ({
+  page,
+}) => {
+  await mount(page);
+  const sectionId = await page.evaluate(
+    () => window.intakeProject.sections.find((s) => s.kind === "logo")!.id,
+  );
+  await page.getByRole("button", { name: "Revisar sugestões" }).click();
+  await page
+    .getByLabel("Resposta estruturada")
+    .fill(
+      JSON.stringify({
+        sectionId,
+        content: { rules: ["Regra sugerida aguardando decisão"] },
+      }),
+    );
+  await page.getByRole("button", { name: "Importar sugestão" }).click();
+  await page
+    .getByRole("button", { name: "Marca e assinaturas", exact: true })
+    .click();
+  await page
+    .getByLabel("Enviar logo")
+    .setInputFiles({
+      name: "logo.svg",
+      mimeType: "image/svg+xml",
+      buffer: Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"/>'),
+    });
+  await expect(page.getByLabel("Logo principal")).not.toHaveValue("");
+  expect(
+    await page.evaluate(() =>
+      window.intakeProject.sections.find((s) => s.kind === "logo"),
+    ),
+  ).toMatchObject({
+    status: "suggested",
+    origin: { kind: "suggested" },
+    approval: { status: "pending" },
+    content: { rules: ["Regra sugerida aguardando decisão"] },
+  });
+});
+
+test("removing an upload and changing weight cannot leave an injected font masquerading as system font", async ({
+  page,
+}) => {
+  await page.goto("/?render-proof");
+  const result = await page.evaluate(async () => {
+    const { loadProjectFonts } = await import(
+      /* @vite-ignore */ "/src/render/fonts.ts" as string
+    );
+    const { createProject } = await import(
+      /* @vite-ignore */ "/src/core/project.ts" as string
+    );
+    const project = createProject("Reconciliação de fontes");
+    project.assets.push({
+      id: "font-file",
+      name: "Original.woff2",
+      path: "assets/original.woff2",
+      hash: "a".repeat(64),
+      mimeType: "font/woff2",
+      origin: { kind: "provided" },
+    });
+    project.brand.typography.push({
+      id: "font",
+      family: "MarquioEphemeralReviewFace",
+      role: "body",
+      weights: [400],
+      fallback: "serif",
+      assetId: "font-file",
+      origin: { kind: "provided" },
+      approval: { status: "pending" },
+    });
+    const before = await loadProjectFonts(
+      project,
+      () =>
+        "/node_modules/@fontsource/inter/files/inter-latin-400-normal.woff2",
+    );
+    project.brand.typography[0].weights = [700];
+    delete project.brand.typography[0].assetId;
+    const after = await loadProjectFonts(project, () => undefined);
+    const remaining = [...document.fonts]
+      .filter((face) => face.family.includes("MarquioEphemeralReviewFace"))
+      .map((face) => face.weight);
+    return { before, after, remaining };
+  });
+  expect(result.before[0]).toMatchObject({
+    status: "loaded",
+    source: "asset",
+    weight: 400,
+  });
+  expect(result.after[0]).toMatchObject({
+    status: "substituted",
+    weight: 700,
+    fallback: "serif",
+  });
+  expect(result.remaining).toEqual([]);
+});
+
+test("system detection runs before shared uploaded families and tracks all current requested weights", async ({
+  page,
+}) => {
+  await page.goto("/?render-proof");
+  const result = await page.evaluate(async () => {
+    const { loadProjectFonts } = await import(
+      /* @vite-ignore */ "/src/render/fonts.ts" as string
+    );
+    const { createProject } = await import(
+      /* @vite-ignore */ "/src/core/project.ts" as string
+    );
+    const project = createProject("Família compartilhada");
+    project.assets.push({
+      id: "font-file",
+      name: "Original.woff2",
+      path: "assets/original.woff2",
+      hash: "a".repeat(64),
+      mimeType: "font/woff2",
+      origin: { kind: "provided" },
+    });
+    const base = {
+      family: "MarquioSharedReviewFace",
+      role: "body",
+      fallback: "serif",
+      origin: { kind: "provided" },
+      approval: { status: "pending" },
+    };
+    project.brand.typography.push(
+      { ...base, id: "uploaded", weights: [400, 600], assetId: "font-file" },
+      { ...base, id: "system-request", weights: [700] },
+    );
+    const first = await loadProjectFonts(
+      project,
+      () =>
+        "/node_modules/@fontsource/inter/files/inter-latin-400-normal.woff2",
+    );
+    const active = [...document.fonts]
+      .filter((face) => face.family.includes("MarquioSharedReviewFace"))
+      .map((face) => face.weight)
+      .sort();
+    project.brand.typography = [];
+    await loadProjectFonts(project, () => undefined);
+    const cleared = [...document.fonts].filter((face) =>
+      face.family.includes("MarquioSharedReviewFace"),
+    ).length;
+    return { first, active, cleared };
+  });
+  expect(result.first[0]).toMatchObject({
+    status: "loaded",
+    source: "asset",
+    weight: 400,
+  });
+  expect(result.first[1]).toMatchObject({
+    status: "loaded",
+    source: "asset",
+    weight: 600,
+  });
+  expect(result.first[2]).toMatchObject({ status: "substituted", weight: 700 });
+  expect(result.active).toEqual(["400", "600"]);
+  expect(result.cleared).toBe(0);
+});

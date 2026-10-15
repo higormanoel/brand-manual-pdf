@@ -1,13 +1,12 @@
 import { useEffect, useLayoutEffect, useState, type ReactNode } from "react";
 import {
-  parseProject,
   ProjectValidationError,
   type BrandProject,
   type BrandData,
   type SectionRecord,
   type SectionContent,
 } from "../../core/project";
-import type { DocumentCommand } from "../../core/commands";
+import { applyCommands, type DocumentCommand } from "../../core/commands";
 import type { AssetRecord } from "../../core/assets";
 import { AssetPicker } from "./AssetPicker";
 import {
@@ -186,6 +185,12 @@ export function SectionForm({
     setBrand((b) => ({ ...b, ...patch }));
   const patchContent = (patch: Partial<SectionContent>) =>
     setContent((c) => ({ ...c, ...patch }));
+  // Structured identity edits do not turn retained agent copy into supplied fact.
+  const copyOrigin =
+    section.origin.kind === "suggested"
+      ? section.origin
+      : { kind: "provided" as const };
+  const copyStatus = copyOrigin.kind === "suggested" ? "suggested" : "provided";
   const voice = brand.voice ?? { traits: [], do: [], avoid: [], modes: [] };
   const patchVoice = (patch: Partial<typeof voice>) =>
     patchBrand({ voice: { ...voice, ...patch } });
@@ -273,20 +278,17 @@ export function SectionForm({
         sectionId: section.id,
         patch: {
           content: nextContent,
-          status,
+          status: status === "skipped" ? "skipped" : copyStatus,
           enabled: status !== "skipped",
-          origin: { kind: "provided" },
+          origin: copyOrigin,
           approval: { status: "pending" },
         },
       },
     ];
     try {
-      // Uploaded assets are already persisted by the host and may reach props one render later.
-      parseProject({
-        ...project,
-        ...patch,
-        brand: { ...project.brand, ...brandPatch },
-      });
+      // Validate arrays and their replacement section references as one atomic save.
+      // References in other sections still have to remain valid.
+      applyCommands(project, commands);
       onCommands(commands);
       setBrand(brandOverride);
       setSavedVersion(
@@ -643,13 +645,13 @@ export function SectionForm({
                   type: "section.update",
                   sectionId: section.id,
                   patch: {
-                    status: "provided",
+                    status: copyStatus,
                     enabled: true,
                     content: {
                       ...content,
                       assetIds: logos.map((l) => l.assetId),
                     },
-                    origin: { kind: "provided" },
+                    origin: copyOrigin,
                     approval: { status: "pending" },
                   },
                 },
