@@ -8,4 +8,4 @@ Client artwork is a separate application layer. The base scenes intentionally co
 - `framed-poster.png`: original generated photographic poster base, 1672 × 941 pixels; prompt in `framed-poster.prompt.txt`.
 - `laptop.png`: original generated photographic display base, 1672 × 941 pixels; prompt in `laptop.prompt.txt`.
 
-The source generation output was copied into this repository so the application never depends on a private Codex cache path. Runtime mockup catalog entries provide surface coordinates and preserve the client artwork independently.
+The source generation output was copied into this repository so the application never depends on a private Codex cache path. The canonical scene dimensions and image-pixel surface coordinates live in `src/mockups/scenes-data.json`; the runtime catalog consumes that source module. Photographs stay in this public directory, while the client artwork remains a separate asset.

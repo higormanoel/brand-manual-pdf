@@ -1,4 +1,4 @@
-import sceneManifest from '../../public/mockups/scenes.json';
+import sceneManifest from './scenes-data.json';
 import type { MockupNode, ProjectionQuad } from '../core/project';
 import { projectToQuad } from './projection';
 import { getMockupPreset } from './presets';

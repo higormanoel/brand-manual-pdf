@@ -19,6 +19,7 @@ export interface MockupsPanelProps {
   initialPresetId?: string;
   initialMode?: 'scene' | 'application';
 }
+interface PanelLifetime { disposed: boolean; urls: Set<string> }
 type AssetSlot = 'scene' | 'artwork' | 'logo' | 'portrait' | 'mask' | 'overlay' | 'final';
 const CORNER_NAMES = ['Superior esquerdo', 'Superior direito', 'Inferior direito', 'Inferior esquerdo'];
 const blankCorners = () => CORNER_NAMES.map(() => ({ x: '', y: '' }));
@@ -31,7 +32,7 @@ export function MockupsPanel({ project, resolveAsset, onInsert, onImportAsset, o
   const [selected, setSelected] = useState<Partial<Record<AssetSlot, string>>>({});
   const [imported, setImported] = useState<AssetRecord[]>([]);
   const [localUrls, setLocalUrls] = useState<Record<string, string>>({});
-  const urlsToRelease = useRef<string[]>([]);
+  const lifetime = useRef<PanelLifetime>({ disposed: false, urls: new Set() });
   const [sceneSize, setSceneSize] = useState<{ width: number; height: number }>();
   const [corners, setCorners] = useState(blankCorners);
   const [nextCorner, setNextCorner] = useState(0);
@@ -61,7 +62,16 @@ export function MockupsPanel({ project, resolveAsset, onInsert, onImportAsset, o
     ...(presetId === 'portrait-badge' ? { portraitAsset: promptAsset('portrait') } : {}),
     aspectRatio, ...(material.trim() ? { material } : {}), ...(sceneVariant.trim() ? { sceneVariant } : {}),
   });
-  useEffect(() => () => { urlsToRelease.current.forEach(url => URL.revokeObjectURL(url)); }, []);
+  useEffect(() => {
+    // Strict Mode replays effects: a fresh lifetime must not revive earlier async work.
+    if (lifetime.current.disposed) lifetime.current = { disposed: false, urls: new Set() };
+    const session = lifetime.current;
+    return () => {
+      session.disposed = true;
+      session.urls.forEach(url => URL.revokeObjectURL(url));
+      session.urls.clear();
+    };
+  }, []);
 
   let candidate: MockupNode | undefined;
   let placementError = '';
@@ -91,19 +101,28 @@ export function MockupsPanel({ project, resolveAsset, onInsert, onImportAsset, o
     setNotice(id ? 'Marque os quatro cantos da superfície antes de inserir.' : ''); setError('');
   }
   function chooseSurface(id: string) {
+    if (id === '') { setSurfaceId(''); return; }
     const surface = builtin?.surfaces.find(item => item.id === id);
     if (!surface) return;
     setSurfaceId(id); setCorners(surface.corners.map(point => ({ x: String(point.x), y: String(point.y) })));
   }
-  async function run(operation: string, action: () => Promise<void>) {
+  async function run(operation: string, action: (session: PanelLifetime) => Promise<void>) {
+    const session = lifetime.current;
+    if (session.disposed) return;
     setBusy(operation); setError(''); setNotice('');
-    try { await action(); } catch (cause) { setError(message(cause)); } finally { setBusy(''); }
+    try { await action(session); }
+    catch (cause) { if (!session.disposed) setError(message(cause)); }
+    finally { if (!session.disposed) setBusy(''); }
   }
-  async function importImage(file: File, slot: AssetSlot) {
+  async function importImage(file: File, slot: AssetSlot, session: PanelLifetime) {
+    if (session.disposed) return;
     if (!file.type.startsWith('image/')) throw new Error('Escolha um arquivo de imagem válido.');
-    const size = await imageDimensions(file);
+    const size = await imageDimensions(file, session);
+    if (!size || session.disposed) return;
     const record = await onImportAsset(file);
-    const url = URL.createObjectURL(file); urlsToRelease.current.push(url);
+    if (session.disposed) return;
+    const url = allocateLifetimeUrl(file, session);
+    if (!url) return;
     setImported(previous => [...previous.filter(item => item.id !== record.id), { ...record, ...size }]);
     setLocalUrls(previous => ({ ...previous, [record.id]: url }));
     setSelected(previous => ({ ...previous, [slot]: record.id }));
@@ -117,10 +136,14 @@ export function MockupsPanel({ project, resolveAsset, onInsert, onImportAsset, o
   }
   async function useBuiltin() {
     if (!builtin) return;
-    await run('Importando cena incluída…', async () => {
+    await run('Importando cena incluída…', async session => {
       const response = await fetch(builtin.url);
+      if (session.disposed) return;
       if (!response.ok) throw new Error('Não foi possível carregar a cena incluída. Importe uma cena própria para continuar.');
-      await importImage(new File([await response.blob()], builtin.url.split('/').pop()!, { type: 'image/png' }), 'scene');
+      const bytes = await response.blob();
+      if (session.disposed) return;
+      const record = await importImage(new File([bytes], builtin.url.split('/').pop()!, { type: 'image/png' }), 'scene', session);
+      if (!record || session.disposed) return;
       setSceneSize({ width: builtin.width, height: builtin.height });
       chooseSurface(builtin.surfaces[0].id);
       setSceneProvenance(`Cena fotográfica gerada originalmente para Marquio: ${builtin.id}; procedência em public/mockups/PROVENANCE.md.`);
@@ -136,9 +159,11 @@ export function MockupsPanel({ project, resolveAsset, onInsert, onImportAsset, o
     setNextCorner((nextCorner + 1) % 4); setSurfaceId('');
   }
   async function generate() {
-    await run('Gerando imagem…', async () => {
+    await run('Gerando imagem…', async session => {
       const result = await generateMockup(createMockupRequest(prepared), provider);
-      await importImage(new File([result.image], `${presetId}-${result.kind}.${imageExtension(result.image.type)}`, { type: result.image.type }), result.kind === 'scene' ? 'scene' : 'final');
+      if (session.disposed) return;
+      const record = await importImage(new File([result.image], `${presetId}-${result.kind}.${imageExtension(result.image.type)}`, { type: result.image.type }), result.kind === 'scene' ? 'scene' : 'final', session);
+      if (!record || session.disposed) return;
       if (result.kind === 'finished-image') setGeneration(result);
       const provenance = JSON.stringify({ ...result.provenance, model: result.model });
       if (result.kind === 'scene') setSceneProvenance(provenance); else setFinalProvenance(provenance);
@@ -167,7 +192,7 @@ export function MockupsPanel({ project, resolveAsset, onInsert, onImportAsset, o
   function upload(label: string, slot: AssetSlot) {
     return <label className="mockups-upload"><span>{label}</span><input type="file" accept="image/*" disabled={Boolean(busy)} onChange={event => {
       const file = event.target.files?.[0]; event.target.value = '';
-      if (file) void run(`Importando ${label.toLowerCase()}…`, async () => { await importImage(file, slot); if (slot === 'final') setGeneration(undefined); if (slot === 'scene') setSceneProvenance(''); if (slot === 'final') setFinalProvenance(''); });
+      if (file) void run(`Importando ${label.toLowerCase()}…`, async session => { const record = await importImage(file, slot, session); if (!record || session.disposed) return; if (slot === 'final') setGeneration(undefined); if (slot === 'scene') setSceneProvenance(''); if (slot === 'final') setFinalProvenance(''); });
     }} /></label>;
   }
 
@@ -213,9 +238,9 @@ export function MockupsPanel({ project, resolveAsset, onInsert, onImportAsset, o
       <label className="mockups-field"><span>Proporção da imagem</span><input value={aspectRatio} onChange={event => setAspectRatio(event.target.value)} /></label>
       <details><summary>Ajustar direção da cena</summary><label className="mockups-field"><span>Material (opcional)</span><input value={material} placeholder={preset.material} onChange={event => setMaterial(event.target.value)} /></label><label className="mockups-field"><span>Variação da cena (opcional)</span><textarea value={sceneVariant} onChange={event => setSceneVariant(event.target.value)} /></label></details>
       {prepared.status === 'ready' ? <><p className="mockups-muted">Prompt preparado. Nenhuma imagem foi gerada por esta preparação.</p><label className="mockups-field"><span>Prompt resolvido</span><textarea className="mockups-prompt" readOnly value={prepared.prompt} /></label></> : <ul className="mockups-requirements">{prepared.missingInputs.map(item => <li key={item.id}>{item.label}</li>)}</ul>}
-      <div className="mockups-actions"><button type="button" disabled={prepared.status !== 'ready'} onClick={() => void run('Copiando prompt…', async () => {
+      <div className="mockups-actions"><button type="button" disabled={prepared.status !== 'ready'} onClick={() => void run('Copiando prompt…', async session => {
         if (onCopy) await onCopy(prepared.prompt!); else { if (!navigator.clipboard) throw new Error('Cópia indisponível neste navegador. Baixe o pedido ou selecione o texto do prompt.'); await navigator.clipboard.writeText(prepared.prompt!); }
-        setNotice('Prompt copiado.');
+        if (!session.disposed) setNotice('Prompt copiado.');
       })}>Copiar prompt</button><button type="button" disabled={prepared.status !== 'ready'} onClick={downloadRequest}>Baixar pedido</button></div>
       <p className="mockups-muted">{provider ? `Provedor configurado: ${provider.name}` : 'Nenhum provedor configurado. Copie o prompt e importe o resultado para continuar.'}</p>
       <button type="button" disabled={!provider || prepared.status !== 'ready'} onClick={() => void generate()}>Gerar imagem</button>
@@ -236,15 +261,23 @@ export function MockupsPanel({ project, resolveAsset, onInsert, onImportAsset, o
 
 function imageExtension(mimeType: string): string { return ({ 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/svg+xml': 'svg', 'image/avif': 'avif' } as Record<string, string>)[mimeType] ?? 'img'; }
 function message(cause: unknown): string { return cause instanceof Error ? cause.message : 'A operação falhou. Tente novamente ou importe uma imagem.'; }
-async function imageDimensions(file: File): Promise<{ width: number; height: number }> {
+function allocateLifetimeUrl(file: Blob, session: PanelLifetime): string | undefined {
+  if (session.disposed) return;
   const url = URL.createObjectURL(file);
+  if (session.disposed) { URL.revokeObjectURL(url); return; }
+  session.urls.add(url);
+  return url;
+}
+async function imageDimensions(file: File, session: PanelLifetime): Promise<{ width: number; height: number } | undefined> {
+  const url = allocateLifetimeUrl(file, session);
+  if (!url) return;
   try {
     return await new Promise((resolve, reject) => {
       const image = new Image(); image.onload = () => image.naturalWidth > 0 && image.naturalHeight > 0
         ? resolve({ width: image.naturalWidth, height: image.naturalHeight }) : reject(new Error('A imagem não tem dimensões válidas.'));
       image.onerror = () => reject(new Error('Não foi possível abrir esta imagem. Envie PNG, JPEG, WebP ou SVG válido.')); image.src = url;
     });
-  } finally { URL.revokeObjectURL(url); }
+  } finally { session.urls.delete(url); URL.revokeObjectURL(url); }
 }
 function ApplicationPreview({ node, assets, resolveAsset }: { node: MockupNode; assets: AssetRecord[]; resolveAsset: (record: AssetRecord) => string }) {
   return <svg className="mockups-application-preview" viewBox={`0 0 ${node.transform.width} ${node.transform.height}`} role="img" aria-label="Prévia da arte aplicada à cena">
