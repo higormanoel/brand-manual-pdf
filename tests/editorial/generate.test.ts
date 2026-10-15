@@ -141,6 +141,84 @@ describe('editorial proposals', () => {
     expect(specimens).toHaveLength(4);
     expect(specimens.every(n => n.text === 'Aurora\nABCDEFGHIJKLMNOPQRSTUVWXYZ\nabcdefghijklmnopqrstuvwxyz\n0123456789')).toBe(true);
   });
+
+  test.each(['color', 'typography', 'logo'] as const)('retains pending %s item metadata on every derived identity object separately from editorial decoration', async kind => {
+    const project = parseProject(fixture);
+    project.sections.forEach(section => { section.origin = { kind: 'provided' }; section.approval = { status: 'approved' }; });
+    const item = kind === 'color' ? project.brand.colors[0] : kind === 'typography' ? project.brand.typography[0] : project.brand.logos[1];
+    item.origin = { kind: 'suggested', description: `Unapproved ${kind} proposal` };
+    item.approval = { status: 'pending' };
+    const result = await generate(project);
+    const targetKind = kind === 'color' ? 'colors' : kind === 'typography' ? 'typography' : 'logo';
+    const section = result.sections.find(s => s.sectionId === project.sections.find(s => s.kind === targetKind)!.id)!;
+    const identity = section.pages.flatMap(page => page.nodes).filter(node => {
+      if (kind === 'color') return node.name === 'swatch-forest' || (node.type === 'text' && ['Floresta', '#283E36', 'Fundos institucionais e assinatura principal.'].includes(node.text));
+      if (kind === 'typography') return node.name.startsWith('specimen-font-display') || (node.type === 'text' && node.text === 'Georgia');
+      return (node.type === 'image' && node.assetId === 'asset-logo-reversed') || (node.type === 'text' && node.text === 'Assinatura clara') || node.name === 'logo-background';
+    });
+    expect(identity.length).toBeGreaterThanOrEqual(3);
+    for (const node of identity) {
+      expect(node.origin).toEqual({ kind: 'suggested', description: `Unapproved ${kind} proposal` });
+      expect(node.approval).toEqual({ status: 'pending' });
+    }
+    const decoration = section.pages[0].nodes.find(node => node.name === 'header-rule')!;
+    expect(decoration.origin).toEqual({ kind: 'provided' });
+    expect(decoration.approval).toEqual({ status: 'approved' });
+    expect(project.brand.colors[1].origin.kind).toBe('fixture');
+    expect(() => parseProject({ ...project, pages: result.sections.flatMap(s => s.pages) })).not.toThrow();
+  });
+
+  test('preserves a pending section approval even when an identity item has already been approved', async () => {
+    const project = createProject('Vereda');
+    project.brand.colors = parseProject(fixture).brand.colors.slice(0, 1);
+    const result = await generate(project);
+    const swatch = result.sections.flatMap(s => s.pages.flatMap(p => p.nodes)).find(n => n.name === 'swatch-forest')!;
+    expect(swatch.origin.kind).toBe('fixture');
+    expect(swatch.approval.status).toBe('pending');
+  });
+
+  test('omits schema-valid empty voice pairs before numbering the next real chapter', async () => {
+    const project = createProject('Vereda');
+    project.brand.voice = { traits: [], do: [], avoid: [], modes: [{ id: 'empty-mode', name: '', do: [], dont: [], examples: [{ wrong: '', right: '  \n' }] }] };
+    project.brand.colors = parseProject(fixture).brand.colors.slice(0, 1);
+    const result = await generate(parseProject(project));
+    expect(result.sections.map(s => project.sections.find(record => record.id === s.sectionId)!.kind)).toEqual(['introduction', 'colors']);
+    expect(texts(result)).not.toContain('Exemplo incorreto');
+    expect(texts(result)).not.toContain('Exemplo correto');
+    const chapter = result.sections.flatMap(s => s.pages.flatMap(p => p.nodes)).find((n): n is TextNode => n.type === 'text' && n.name === 'chapter-number')!;
+    expect(chapter.text).toBe('001');
+  });
+
+  test.each([
+    { wrong: 'Pressione agora!', right: '', present: 'Exemplo incorreto', absent: 'Exemplo correto' },
+    { wrong: '', right: 'Escolha no seu tempo.', present: 'Exemplo correto', absent: 'Exemplo incorreto' },
+  ])('only labels the supplied side of a partial voice pair ($present)', async pair => {
+    const project = createProject('Vereda');
+    project.brand.voice = { traits: [], do: [], avoid: [], modes: [{ id: 'partial', name: '', do: [], dont: [], examples: [{ wrong: pair.wrong, right: pair.right }] }] };
+    const result = await generate(parseProject(project));
+    expect(texts(result)).toContain(pair.present);
+    expect(texts(result)).not.toContain(pair.absent);
+    expect(texts(result)).toContain(pair.wrong || pair.right);
+  });
+
+  test('composes measured editable opener numbers and titles at the bottom left with muted display numbers', async () => {
+    const result = await generate(parseProject(fixture));
+    const openers = result.sections.flatMap(s => s.pages).filter(page => page.nodes.some(node => node.name === 'chapter-number'));
+    expect(openers).toHaveLength(8);
+    for (const page of openers) {
+      const number = page.nodes.find((node): node is TextNode => node.type === 'text' && node.name === 'chapter-number')!;
+      const title = page.nodes.find((node): node is TextNode => node.type === 'text' && node.name === 'chapter-title')!;
+      expect(number.style.color).toBe('#38393B');
+      expect(number.style.fontSize).toBe(72);
+      expect(number.transform.x).toBe(91);
+      expect(title.transform.x).toBe(91);
+      expect(number.transform.y).toBeGreaterThan(540);
+      expect(title.transform.y).toBeGreaterThan(720);
+      expect(number.transform.y + number.transform.height).toBeLessThan(title.transform.y);
+      expect(title.transform.y + title.transform.height).toBeLessThanOrEqual(930);
+      expect(number.locked || title.locked).toBe(false);
+    }
+  });
 });
 
 test('pagination uses supplied measured fit and preserves whitespace and grapheme clusters', async () => {

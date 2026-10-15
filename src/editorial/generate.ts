@@ -4,15 +4,16 @@ import { CHAPTERS, editorialStyle, NEUTRAL, type EditorialRole } from './neutral
 export interface GeneratedSection { sectionId: string; variantId: string; pages: Page[]; sourceRevision: number }
 export interface GenerationResult { sections: GeneratedSection[]; diagnostics: Diagnostic[] }
 export interface GenerationOptions { measureText: MeasureText; variantId?: string }
-interface Block { text: string; role: EditorialRole; name: string; style?: TextStyle }
+type ContentSource = Pick<BaseNode, 'origin' | 'approval'>;
+interface Block { text: string; role: EditorialRole; name: string; style?: TextStyle; source?: ContentSource }
 interface Chapter { title: string; number?: string }
 const supplied = (value: string | undefined): value is string => Boolean(value?.trim());
 const enabled = (section: SectionRecord) => section.enabled && section.status !== 'skipped';
 
 function blocksFor(project: BrandProject, section: SectionRecord): Block[] {
   const blocks: Block[] = [];
-  const add = (text: string | undefined, role: EditorialRole = 'body', name: string = role) => {
-    if (supplied(text)) blocks.push({ text, role, name: `${name}-${blocks.length}` });
+  const add = (text: string | undefined, role: EditorialRole = 'body', name: string = role, source?: ContentSource) => {
+    if (supplied(text)) blocks.push({ text, role, name: `${name}-${blocks.length}`, source });
   };
   const list = (items: string[], name = 'body') => items.forEach(item => add(item, 'body', name));
   const content = section.content;
@@ -42,8 +43,8 @@ function blocksFor(project: BrandProject, section: SectionRecord): Block[] {
         if (mode.do.some(supplied)) { add('Como escrever', 'caption'); list(mode.do, 'guideline-do'); }
         if (mode.dont.some(supplied)) { add('Evitar', 'caption'); list(mode.dont, 'guideline-avoid'); }
         mode.examples?.forEach(example => {
-          add('Exemplo incorreto', 'caption'); add(example.wrong, 'body', 'example-wrong');
-          add('Exemplo correto', 'caption'); add(example.right, 'body', 'example-right');
+          if (supplied(example.wrong)) { add('Exemplo incorreto', 'caption'); add(example.wrong, 'body', 'example-wrong'); }
+          if (supplied(example.right)) { add('Exemplo correto', 'caption'); add(example.right, 'body', 'example-right'); }
           add(example.explanation);
         });
       });
@@ -52,9 +53,9 @@ function blocksFor(project: BrandProject, section: SectionRecord): Block[] {
     case 'logo': add(project.brand.tagline, 'quote'); break;
     case 'clear-space':
       project.brand.logos.forEach(logo => {
-        if (logo.clearSpace !== undefined || logo.minWidth !== undefined) add(logo.name, 'heading');
-        if (logo.clearSpace !== undefined) add(`Área de proteção: ${logo.clearSpace}.`, 'body', 'provided-clear-space');
-        if (logo.minWidth !== undefined) add(`Largura mínima: ${logo.minWidth} px.`, 'body', 'provided-min-width');
+        if (logo.clearSpace !== undefined || logo.minWidth !== undefined) add(logo.name, 'heading', 'logo-rule-name', logo);
+        if (logo.clearSpace !== undefined) add(`Área de proteção: ${logo.clearSpace}.`, 'body', 'provided-clear-space', logo);
+        if (logo.minWidth !== undefined) add(`Largura mínima: ${logo.minWidth} px.`, 'body', 'provided-min-width', logo);
       });
       break;
     case 'credits': {
@@ -75,17 +76,20 @@ class SectionLayout {
   readonly pages: Page[] = [];
   constructor(readonly project: BrandProject, readonly source: SectionRecord, readonly variant: string, readonly options: GenerationOptions, readonly diagnostics: Diagnostic[], readonly chapter: Chapter) {}
   style(role: EditorialRole, dark = false) { return editorialStyle(this.project.editorial, role, dark); }
-  base(page: Page, name: string, x: number, y: number, width: number, height: number): BaseNode {
+  base(page: Page, name: string, x: number, y: number, width: number, height: number, source: ContentSource = this.source): BaseNode {
     return {
       id: `${page.id}:node:${page.nodes.length}:${name}`, name,
       transform: { x, y, width, height, rotation: 0, scaleX: 1, scaleY: 1 },
       opacity: 1, visible: true, locked: false,
-      origin: structuredClone(this.source.origin), approval: structuredClone(this.source.approval),
+      origin: structuredClone(source.origin),
+      // An approved container cannot approve a pending item, and a pending
+      // section remains pending even when its individual item was approved.
+      approval: structuredClone(source.approval.status === 'pending' ? source.approval : this.source.approval.status === 'pending' ? this.source.approval : source.approval),
       generatedFrom: { sectionId: this.source.id, revision: this.project.revision },
     };
   }
-  pushText(page: Page, fragment: TextFragment, style: TextStyle, name: string, x: number, y: number, width: number) {
-    const node: DocumentNode = { ...this.base(page, name, x, y, width, Math.max(1, Math.ceil(Math.max(fragment.measurement.height, fragment.measurement.scrollHeight)))), type: 'text', text: fragment.text, style: { ...style } };
+  pushText(page: Page, fragment: TextFragment, style: TextStyle, name: string, x: number, y: number, width: number, source?: ContentSource) {
+    const node: DocumentNode = { ...this.base(page, name, x, y, width, Math.max(1, Math.ceil(Math.max(fragment.measurement.height, fragment.measurement.scrollHeight))), source), type: 'text', text: fragment.text, style: { ...style } };
     page.nodes.push(node);
     if (!fragment.measurement.fontAvailable) this.diagnostics.push({ code: 'font-substitution', severity: 'warning', path: `pages.${page.id}.nodes.${node.id}`, message: `A fonte ${style.fontFamily} não está disponível para este texto.` });
     return node.transform.height;
@@ -95,8 +99,8 @@ class SectionLayout {
     if (fragments.length > 1) throw new RangeError(`O rótulo editorial ${name} não cabe na caixa.`);
     if (fragments[0]) this.pushText(page, fragments[0], this.style(role, dark), name, x, y, width);
   }
-  shape(page: Page, name: string, x: number, y: number, width: number, height: number, fill: string) {
-    page.nodes.push({ ...this.base(page, name, x, y, width, height), type: 'shape', shape: 'rectangle', style: { fill, stroke: 'none', strokeWidth: 0, cornerRadius: 0 } });
+  shape(page: Page, name: string, x: number, y: number, width: number, height: number, fill: string, source?: ContentSource) {
+    page.nodes.push({ ...this.base(page, name, x, y, width, height, source), type: 'shape', shape: 'rectangle', style: { fill, stroke: 'none', strokeWidth: 0, cornerRadius: 0 } });
   }
   async page(title: string, dark = false): Promise<Page> {
     const page: Page = { id: `${this.variant}:${this.source.id}:page:${this.pages.length}`, sectionId: this.source.id, title, width: NEUTRAL.width, height: NEUTRAL.height, background: dark ? NEUTRAL.dark : NEUTRAL.light, nodes: [] };
@@ -110,8 +114,16 @@ class SectionLayout {
   }
   async opener() {
     const page = await this.page(this.chapter.title, true);
-    await this.text(page, this.chapter.number!, 'caption', 'chapter-number', 91, 260, 300, 40, true);
-    await this.text(page, this.chapter.title, 'display', 'chapter-title', 91, 365, 1500, 430, true);
+    const titleStyle = this.style('display', true);
+    const numberStyle = { ...titleStyle, color: NEUTRAL.muted };
+    const title = await paginateText(this.chapter.title, { measureText: this.options.measureText, style: titleStyle, width: 1500, height: 500 });
+    const number = await paginateText(this.chapter.number!, { measureText: this.options.measureText, style: numberStyle, width: 300, height: 150 });
+    if (title.length !== 1 || number.length !== 1) throw new RangeError('A abertura exige título e número que caibam no conjunto editorial.');
+    const height = (fragment: TextFragment) => Math.ceil(Math.max(fragment.measurement.height, fragment.measurement.scrollHeight));
+    const titleY = NEUTRAL.bodyBottom - height(title[0]);
+    const numberY = titleY - 24 - height(number[0]);
+    this.pushText(page, number[0], numberStyle, 'chapter-number', 91, numberY, 300);
+    this.pushText(page, title[0], titleStyle, 'chapter-title', 91, titleY, 1500);
   }
   async flow(blocks: Block[], title = this.source.title, leftColor?: BrandColor) {
     if (!blocks.length) return;
@@ -120,7 +132,7 @@ class SectionLayout {
     const next = async () => {
       page = await this.page(title);
       y = NEUTRAL.bodyTop;
-      if (leftColor) this.shape(page, `swatch-${leftColor.id}`, 91, 260, 530, 530, leftColor.hex);
+      if (leftColor) this.shape(page, `swatch-${leftColor.id}`, 91, 260, 530, 530, leftColor.hex, leftColor);
       else {
         await this.text(page, this.chapter.number ?? '', 'display', 'content-number', 91, 260, 530, 110);
         await this.text(page, this.chapter.title, 'heading', 'content-chapter', 91, 390, 530, 450);
@@ -137,7 +149,7 @@ class SectionLayout {
       const fragments = await paginateText(block.text, { measureText: this.options.measureText, style, width: NEUTRAL.bodyWidth, height: NEUTRAL.bodyBottom - y, continuationHeight: NEUTRAL.bodyBottom - NEUTRAL.bodyTop });
       for (let part = 0; part < fragments.length; part++) {
         if (part) await next();
-        y += this.pushText(page!, fragments[part], style, `${block.name}-${part}`, NEUTRAL.bodyX, y, NEUTRAL.bodyWidth) + (block.role === 'caption' ? 16 : 32);
+        y += this.pushText(page!, fragments[part], style, `${block.name}-${part}`, NEUTRAL.bodyX, y, NEUTRAL.bodyWidth, block.source) + (block.role === 'caption' ? 16 : 32);
       }
     }
   }
@@ -163,15 +175,18 @@ class SectionLayout {
         continue;
       }
       const logo = this.project.brand.logos.find(item => item.assetId === id);
+      // A logo carries its own approval. Standalone assets have no approval
+      // field; a suggested asset cannot acquire approval from its container.
+      const source: ContentSource = logo ?? { origin: asset.origin, approval: asset.origin.kind === 'suggested' ? { status: 'pending' } : this.source.approval };
       const page = await this.page(this.source.title);
       await this.text(page, this.chapter.title, 'heading', 'image-chapter', 91, 260, 460, 450);
-      if (logo?.background === 'dark') this.shape(page, 'logo-background', 640, 240, 1189, 590, NEUTRAL.dark);
-      page.nodes.push({ ...this.base(page, 'provided-image', 680, 280, 1109, 510), type: 'image', assetId: id, fit: 'contain', alt: asset.name });
+      if (logo?.background === 'dark') this.shape(page, 'logo-background', 640, 240, 1189, 590, NEUTRAL.dark, source);
+      page.nodes.push({ ...this.base(page, 'provided-image', 680, 280, 1109, 510, source), type: 'image', assetId: id, fit: 'contain', alt: asset.name });
       // Captions also use measured flow: a long filename is ordinary editable
       // text and continues, rather than being clipped under an image.
       const captions = await paginateText(logo?.name ?? asset.name, { measureText: this.options.measureText, style: this.style('caption'), width: 1189, height: 90, continuationHeight: 670 });
-      this.pushText(page, captions[0], this.style('caption'), 'image-caption', 640, 850, 1189);
-      if (captions.length > 1) await this.flow(captions.slice(1).map((part, index) => ({ text: part.text, role: 'caption', name: `image-caption-continuation-${index}` })));
+      this.pushText(page, captions[0], this.style('caption'), 'image-caption', 640, 850, 1189, source);
+      if (captions.length > 1) await this.flow(captions.slice(1).map((part, index) => ({ text: part.text, role: 'caption', name: `image-caption-continuation-${index}`, source })));
     }
   }
   async color(color: BrandColor) {
@@ -181,17 +196,17 @@ class SectionLayout {
       { text: color.role, role: 'caption', name: 'color-role' },
     ];
     if (supplied(color.usage)) blocks.push({ text: color.usage, role: 'body', name: 'color-usage' });
-    await this.flow(blocks, color.name, color);
+    await this.flow(blocks.map(block => ({ ...block, source: color })), color.name, color);
   }
   async specimen(font: BrandTypography) {
     const family = `${JSON.stringify(font.family)}, ${font.fallback}`;
-    const identity: Block[] = [{ text: font.family, role: 'heading', name: 'type-family' }, { text: font.role, role: 'caption', name: 'type-role' }];
+    const identity: Block[] = [{ text: font.family, role: 'heading', name: 'type-family', source: font }, { text: font.role, role: 'caption', name: 'type-role', source: font }];
     if (!font.weights.length) await this.flow(identity, font.family);
     for (const weight of font.weights) {
       await this.flow([
         ...identity,
-        { text: `${weight}`, role: 'caption', name: `type-weight-${weight}` },
-        { text: `${this.project.brand.name}\nABCDEFGHIJKLMNOPQRSTUVWXYZ\nabcdefghijklmnopqrstuvwxyz\n0123456789`, role: 'quote', name: `specimen-${font.id}-${weight}`, style: { ...this.style('quote'), fontFamily: family, fontWeight: weight } },
+        { text: `${weight}`, role: 'caption', name: `type-weight-${weight}`, source: font },
+        { text: `${this.project.brand.name}\nABCDEFGHIJKLMNOPQRSTUVWXYZ\nabcdefghijklmnopqrstuvwxyz\n0123456789`, role: 'quote', name: `specimen-${font.id}-${weight}`, style: { ...this.style('quote'), fontFamily: family, fontWeight: weight }, source: font },
       ], font.family);
     }
   }

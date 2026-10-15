@@ -65,7 +65,12 @@ test('renders the full fictitious fixture through shared Artboard with all live 
     const measurements: Record<string, unknown> = {};
     for (const p of document.pages) for (const n of p.nodes) if (n.type === 'text') measurements[n.id] = await measureText({ text: n.text, style: n.style, width: n.transform.width, height: n.transform.height });
     await renderManualProof(project, pages);
-    return { pages: pages.length, nodes: pages.reduce((n: number, p: { nodes: unknown[] }) => n + p.nodes.length, 0), diagnostics: [...generated.diagnostics, ...preflight(document, measurements)] };
+    const openers = document.pages.filter((p: { nodes: { name: string }[] }) => p.nodes.some(n => n.name === 'chapter-number')).map((p: { id: string; nodes: { id: string; name: string; transform: { y: number }; style: { color: string; fontSize: number } }[] }) => {
+      const number = p.nodes.find(n => n.name === 'chapter-number')!;
+      const title = p.nodes.find(n => n.name === 'chapter-title')!;
+      return { pageId: p.id, numberId: number.id, titleId: title.id, numberY: number.transform.y, titleY: title.transform.y };
+    });
+    return { pages: pages.length, nodes: pages.reduce((n: number, p: { nodes: unknown[] }) => n + p.nodes.length, 0), openers, diagnostics: [...generated.diagnostics, ...preflight(document, measurements)] };
   });
   expect(result.pages).toBeGreaterThan(15);
   expect(result.diagnostics).toEqual([]);
@@ -75,7 +80,52 @@ test('renders the full fictitious fixture through shared Artboard with all live 
     return e.scrollHeight > node.clientHeight + .5 || e.scrollWidth > node.clientWidth + .5 ? [node.dataset.nodeId] : [];
   }));
   expect(overflow).toEqual([]);
+  expect(result.openers).toHaveLength(8);
+  for (const opener of result.openers) {
+    expect(opener.numberY).toBeGreaterThan(540);
+    expect(opener.titleY).toBeGreaterThan(720);
+    await expect(page.locator(`[data-node-id="${opener.numberId}"] [data-text-content]`)).toHaveCSS('color', 'rgb(56, 57, 59)');
+    await expect(page.locator(`[data-node-id="${opener.numberId}"] [data-text-content]`)).toHaveCSS('font-size', '72px');
+  }
   await expect(page.locator('[data-node-type="image"] img')).toHaveCount(5);
   writeFileSync(info.outputPath('fixture-metrics.json'), JSON.stringify(result, null, 2));
   await page.locator('#editorial-contact-sheet').screenshot({ path: info.outputPath('aurora-contact-sheet.png') });
+  await page.locator(`[data-artboard-id="${result.openers[0].pageId}"]`).screenshot({ path: info.outputPath('opener-thumbnail.png') });
+});
+
+test('retains pending item provenance and omits empty voice examples with real browser measurements', async ({ page }, info) => {
+  await page.goto('/?render-proof');
+  await expect(page.locator('[data-render-ready="true"]')).toBeVisible();
+  const proof = await page.evaluate(async () => {
+    const { createProject, parseProject } = await import(/* @vite-ignore */ '/src/core/project.ts' as string);
+    const { generateManual } = await import(/* @vite-ignore */ '/src/editorial/generate.ts' as string);
+    const { measureText } = await import(/* @vite-ignore */ '/src/render/textMeasurement.ts' as string);
+    const project = parseProject(await (await fetch('/fixtures/aurora/project.json')).json());
+    project.sections.forEach((s: { origin: unknown; approval: unknown }) => { s.origin = { kind: 'provided' }; s.approval = { status: 'approved' }; });
+    for (const item of [project.brand.colors[0], project.brand.typography[0], project.brand.logos[1]]) {
+      item.origin = { kind: 'suggested', description: 'Pending proof item' }; item.approval = { status: 'pending' };
+    }
+    const before = JSON.stringify(project);
+    const generated = await generateManual(project, { measureText, variantId: 'pending-proof' });
+    const nodes = generated.sections.flatMap((s: { pages: { nodes: unknown[] }[] }) => s.pages.flatMap(p => p.nodes));
+    const identity = nodes.filter((n: { type: string; name: string; assetId?: string }) => n.name === 'swatch-forest' || n.name.startsWith('specimen-font-display') || (n.type === 'image' && n.assetId === 'asset-logo-reversed')).map((n: { name: string; origin: unknown; approval: unknown }) => ({ name: n.name, origin: n.origin, approval: n.approval }));
+    const partial = createProject('Vereda');
+    partial.brand.voice = { traits: [], do: [], avoid: [], modes: [{ id: 'voice-empty', name: '', do: [], dont: [], examples: [{ wrong: '  ', right: '' }] }] };
+    const empty = await generateManual(parseProject(partial), { measureText, variantId: 'empty-proof' });
+    partial.brand.voice.modes[0].examples = [{ wrong: '', right: 'Venha no seu tempo.' }];
+    const right = await generateManual(parseProject(partial), { measureText, variantId: 'partial-proof' });
+    const text = right.sections.flatMap((s: { pages: { nodes: { type: string; text?: string }[] }[] }) => s.pages.flatMap(p => p.nodes.filter(n => n.type === 'text').map(n => n.text)));
+    return { identity, unchanged: before === JSON.stringify(project), emptyPages: empty.sections.flatMap((s: { pages: unknown[] }) => s.pages).length, partialText: text };
+  });
+  expect(proof.identity).toHaveLength(4);
+  for (const node of proof.identity) {
+    expect(node.origin).toEqual({ kind: 'suggested', description: 'Pending proof item' });
+    expect(node.approval).toEqual({ status: 'pending' });
+  }
+  expect(proof.unchanged).toBe(true);
+  expect(proof.emptyPages).toBe(1);
+  expect(proof.partialText).toContain('Venha no seu tempo.');
+  expect(proof.partialText).toContain('Exemplo correto');
+  expect(proof.partialText).not.toContain('Exemplo incorreto');
+  writeFileSync(info.outputPath('review-regressions.json'), JSON.stringify(proof, null, 2));
 });
