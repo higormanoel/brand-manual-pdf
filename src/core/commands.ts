@@ -9,6 +9,7 @@ export interface ProjectPatch { title?: string; brand?: Partial<BrandData>; brie
 /** IDs are supplied by callers: replaying a batch produces the same document. Indices refer to the final list. */
 export type DocumentCommand =
   | { type: 'project.update'; patch: ProjectPatch }
+  | { type: 'project.restore'; project: BrandProject }
   | { type: 'page.insert'; page: Page; index?: number }
   | { type: 'page.update'; pageId: string; patch: Partial<Omit<Page, 'id' | 'nodes'>> }
   | { type: 'page.delete'; pageId: string }
@@ -136,9 +137,16 @@ function installVariant(project: BrandProject, command: Extract<DocumentCommand,
 
 /** Pure and atomic. Validates the whole result; persisted revision belongs to the storage repository. */
 export function applyCommands(project: BrandProject, commands: DocumentCommand[]): BrandProject {
-  const next = parseProject(project);
+  let next = parseProject(project);
   for (const command of commands) {
     switch (command.type) {
+      case 'project.restore': {
+        const restored = parseProject(command.project);
+        if (restored.id !== next.id) throw new Error('Restored snapshot must belong to the same project');
+        // Undo/redo restore document content; only the repository advances the confirmed revision.
+        next = { ...restored, revision: next.revision };
+        break;
+      }
       case 'project.update': {
         allowKeys(command.patch, ['title', 'brand', 'brief', 'editorial', 'credits']);
         if (command.patch.title !== undefined) next.title = command.patch.title;

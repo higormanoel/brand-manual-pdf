@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { applyCommands, findNode, type DocumentCommand } from '../../src/core/commands';
-import { createProject, type BrandProject, type Page } from '../../src/core/project';
+import { createProject, ProjectValidationError, type BrandProject, type Page } from '../../src/core/project';
 import type { DocumentNode, GroupNode, ShapeNode } from '../../src/core/nodes';
 import { localToDocument } from '../../src/core/geometry';
+import { createHistory } from '../../src/core/history';
 const shape = (id: string, x = 0, y = 0): ShapeNode => ({ id, type: 'shape', name: id, transform: { x, y, width: 100, height: 50, rotation: 0, scaleX: 1, scaleY: 1 }, opacity: 1, locked: false, visible: true, origin: { kind: 'manual' }, approval: { status: 'pending' }, shape: 'rectangle', style: { fill: '#FFFFFF', stroke: 'none', strokeWidth: 0, cornerRadius: 0 } });
 function setup(nodes: DocumentNode[] = [shape('a', 10, 20), shape('b', 150, 70)]): BrandProject {
   const p = createProject('Aurora'); p.pages = [{ id: 'cover', title: 'Capa', sectionId: p.sections[0].id, width: 1920, height: 1080, background: '#FFFFFF', nodes }]; return p;
@@ -173,4 +174,59 @@ it('keeps directly locked nodes fixed during gestures and permits explicit unloc
   expect(after.pages[0].nodes[0].transform).toMatchObject({ x: 12, y: 34 });
   const unlocked = applyCommands(p, [{ type: 'node.update', pageId: 'cover', nodeId: 'locked', patch: { locked: false } }, { type: 'node.move', pageId: 'cover', nodeIds: ['locked'], delta: { x: 8, y: 6 }, source: 'keyboard' }]);
   expect(unlocked.pages[0].nodes[0].transform).toMatchObject({ x: 20, y: 40 });
+});
+
+
+// Break caught: persisted undo must restore historical content without rolling back storage's confirmed revision.
+describe('guarded project restore', () => {
+  it('restores a real older history snapshot including text, positions and asset manifests at the current revision', () => {
+    const text: DocumentNode = {
+      ...shape('text', 12, 34), type: 'text', text: 'Original',
+      style: { fontFamily: 'Inter', fontSize: 24, fontWeight: 400, fontStyle: 'normal', lineHeight: 1.2, letterSpacing: 0, color: '#000000', align: 'left', verticalAlign: 'top' },
+    };
+    const p = setup([text]); p.revision = 2;
+    const asset = { id: 'art', name: 'Original asset', mimeType: 'image/png', path: 'assets/art.png', hash: 'a'.repeat(64), origin: { kind: 'provided' as const } };
+    p.assets = [asset];
+    const history = createHistory(p);
+    history.execute([
+      { type: 'node.update', pageId: 'cover', nodeId: 'text', patch: { text: 'Later edit', transform: { x: 200, y: 300, rotation: 45 } } },
+      { type: 'asset.update', assetId: 'art', patch: { name: 'Later asset' } },
+      { type: 'asset.insert', asset: { ...asset, id: 'extra', path: 'assets/extra.png' } },
+    ]);
+    const current = { ...history.current, revision: 9 };
+    const older = history.undo();
+    expect(older.revision).toBe(2);
+    const restored = applyCommands(current, [{ type: 'project.restore', project: older }]);
+    expect(restored.revision).toBe(9);
+    expect(restored.pages[0].nodes[0]).toMatchObject({ text: 'Original', transform: { x: 12, y: 34, rotation: 0 } });
+    expect(restored.assets).toEqual([asset]);
+    expect(current.pages[0].nodes[0]).toMatchObject({ text: 'Later edit', transform: { x: 200, y: 300, rotation: 45 } });
+    expect(current.assets).toHaveLength(2); expect(older.revision).toBe(2);
+    expect(restored.pages).not.toBe(older.pages); expect(restored.assets).not.toBe(older.assets);
+    const composed = applyCommands(current, [
+      { type: 'project.restore', project: older },
+      { type: 'node.update', pageId: 'cover', nodeId: 'text', patch: { text: 'After restore', transform: { x: 20 } } },
+    ]);
+    expect(composed.revision).toBe(9);
+    expect(composed.pages[0].nodes[0]).toMatchObject({ text: 'After restore', transform: { x: 20, y: 34, rotation: 0 } });
+  });
+  it('rejects a different project after earlier commands without mutating the current document', () => {
+    const current = setup(); current.revision = 12;
+    const before = structuredClone(current);
+    expect(() => applyCommands(current, [
+      { type: 'project.update', patch: { title: 'Pending' } },
+      { type: 'project.restore', project: createProject('Other') },
+    ])).toThrow(/same project/i);
+    expect(current).toEqual(before);
+  });
+  it('validates the entire incoming snapshot before restoring it atomically', () => {
+    const current = setup(); current.revision = 12;
+    const invalid = structuredClone(current); invalid.revision = 1; invalid.pages[0].nodes[0].transform.width = -1;
+    const before = structuredClone(current);
+    expect(() => applyCommands(current, [
+      { type: 'project.update', patch: { title: 'Pending' } },
+      { type: 'project.restore', project: invalid },
+    ])).toThrow(ProjectValidationError);
+    expect(current).toEqual(before);
+  });
 });
