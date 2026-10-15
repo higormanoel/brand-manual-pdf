@@ -35,9 +35,9 @@ describe('durable repository', () => {
     expect([...snapshot.assets[imported.asset.path]]).toEqual([1, 2, 3]);
     expect((await repo.snapshot(0)).project.assets).toHaveLength(0);
   });
-  it('reopens a valid prior document when atomic rename fails and permits a later retry', async () => {
+  it('reopens a valid prior document when atomic exclusive publication fails and permits a later retry', async () => {
     const dir = await folder(); const repo = await ProjectRepository.open(dir, { project: createProject('Before') });
-    const rename = fs.rename.bind(fs); vi.spyOn(fs, 'rename').mockImplementation(async (source, target) => { if (String(target).endsWith('project.marquio.json')) throw new Error('disk failure'); await rename(source, target); });
+    const link = fs.link.bind(fs); vi.spyOn(fs, 'link').mockImplementation(async (source, target) => { if (String(target).endsWith('commits/1.json')) throw new Error('disk failure'); await link(source, target); });
     await expect(repo.commit(batch('write', 0, 'After'))).rejects.toThrow('disk failure'); vi.restoreAllMocks();
     const reopened = await ProjectRepository.open(dir); expect((await reopened.load()).title).toBe('Before');
     expect((await reopened.commit(batch('write', 0, 'After'))).revision).toBe(1);
