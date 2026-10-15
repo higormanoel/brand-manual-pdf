@@ -46,7 +46,7 @@ test("browser acknowledgment waits for durable canonical project and reload rest
 test("failed IndexedDB commit rejects and does not claim a new browser revision", async () => {
   const runtime = await createBrowserRuntime();
   const spy = vi
-    .spyOn(RecoveryStore.prototype, "save")
+    .spyOn(RecoveryStore.prototype, "publish")
     .mockRejectedValue(new Error("Quota exceeded"));
   try {
     await expect(

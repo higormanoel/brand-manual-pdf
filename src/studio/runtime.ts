@@ -6,7 +6,13 @@ import {
 import { applyCommands, type SaveAck } from "../core/commands";
 import type { AssetImportInput } from "../core/assets";
 import { connectLocalProject, type LocalProjectClient } from "../server/client";
-import { RecoveryStore, type RecoveryRecord } from "../storage/recovery";
+import {
+  RecoveryStore,
+  RecoveryPublicationError,
+  type RecoveryRecord,
+  type CanonicalPublication,
+  type PublicationReceipt,
+} from "../storage/recovery";
 import { createSnapshot, type ProjectSnapshot } from "../storage/snapshot";
 import { exportPortable } from "../storage/portable";
 import type { StudioRuntime } from "./runtime-contract";
@@ -35,12 +41,18 @@ async function hash(bytes: Uint8Array) {
     (b) => b.toString(16).padStart(2, "0"),
   ).join("");
 }
-/** Browser-only commits become durable before acknowledgment; all asset bytes live outside history. */
+/** Canonical publication is atomic across tabs; cache health never negates a durable acknowledgment. */
 export async function createBrowserRuntime(
   snapshot?: ProjectSnapshot,
   preserveRecovery = false,
 ): Promise<StudioRuntime> {
-  const store = await RecoveryStore.open();
+  let store: RecoveryStore | undefined;
+  let cacheFailure: unknown;
+  try {
+    store = await RecoveryStore.open();
+  } catch (error) {
+    cacheFailure = error;
+  }
   const canonical = await RecoveryStore.open({
     name: "marquio-browser-confirmed-v1",
   });
@@ -52,113 +64,228 @@ export async function createBrowserRuntime(
   const revisions = new Map<number, BrandProject>();
   let closed = false;
   let tail: Promise<unknown> = Promise.resolve();
-  const serial = <T>(action: () => Promise<T>): Promise<T> => {
-    const p = tail.then(action);
-    tail = p.catch(() => {});
-    return p;
+  const serial = <T>(action: () => Promise<T>) => {
+    const work = tail.then(action);
+    tail = work.catch(() => {});
+    return work;
   };
-  function resolver(asset: BrandProject["assets"][number]) {
+  function copyConfirmed(record: RecoveryRecord) {
+    project = parseProject(record.project);
+    for (const [name, owned] of Object.entries(record.assets))
+      Object.defineProperty(bytes, name, {
+        value: new Uint8Array(owned),
+        enumerable: true,
+        writable: true,
+        configurable: true,
+      });
+    revisions.set(project.revision, structuredClone(project));
+  }
+  function resolveAsset(asset: BrandProject["assets"][number]) {
     if (closed) return "";
-    let u = urls.get(asset.id);
-    if (!u && bytes[asset.path]) {
-      u = URL.createObjectURL(
+    const identity = JSON.stringify([
+      asset.id,
+      asset.path,
+      asset.hash,
+      asset.mimeType,
+    ]);
+    let url = urls.get(identity);
+    if (!url && bytes[asset.path]) {
+      url = URL.createObjectURL(
         new Blob([new Uint8Array(bytes[asset.path]).buffer], {
           type: asset.mimeType,
         }),
       );
-      urls.set(asset.id, u);
+      urls.set(identity, url);
     }
-    return u ?? "";
+    return url ?? "";
   }
-  async function persist(
-    next: BrandProject,
-    pending: RecoveryRecord["pending"] = [],
-  ) {
-    const record = {
-      project: next,
-      assets: bytes,
-      pending,
-      confirmedRevision: next.revision,
-      mode: "browser-only" as const,
-    };
-    await canonical.save(record);
-    await store.save(record);
-    remember(next.id);
+  const confirmedInput = (next: BrandProject) => ({
+    project: next,
+    assets: bytes,
+    pending: [],
+    confirmedRevision: next.revision,
+    mode: "browser-only" as const,
+  });
+  async function refreshCache() {
+    try {
+      if (!store) throw cacheFailure ?? new Error("Recuperação indisponível");
+      await store.save(confirmedInput(project));
+      remember(project.id);
+    } catch (error) {
+      cacheFailure = error;
+    }
   }
   const initial = await createSnapshot(project, bytes);
-  if (!preserveRecovery) await persist(initial.project);
-  revisions.set(project.revision, initial.project);
-  async function acknowledge(
-    next: BrandProject,
-    commandId: string,
-  ): Promise<SaveAck> {
-    const validated = await createSnapshot(next, bytes);
-    await persist(validated.project);
-    project = parseProject(validated.project);
-    revisions.set(next.revision, validated.project);
-    return {
-      commandId,
-      revision: next.revision,
-      project: structuredClone(next),
-    };
+  try {
+    const existing = preserveRecovery
+      ? await canonical.publication(project.id)
+      : undefined;
+    const publication =
+      existing ??
+      (await canonical.publish(confirmedInput(initial.project), null));
+    await createSnapshot(publication.record.project, publication.record.assets);
+    copyConfirmed(publication.record);
+    if (!preserveRecovery) await refreshCache();
+  } catch (error) {
+    store?.close();
+    canonical.close();
+    throw error;
+  }
+  async function finish(publication: CanonicalPublication): Promise<SaveAck> {
+    if (!publication.ack) throw new Error("Recibo de publicação ausente");
+    copyConfirmed(publication.record);
+    revisions.set(
+      publication.ack.revision,
+      structuredClone(publication.ack.project),
+    );
+    await refreshCache();
+    return structuredClone(publication.ack);
+  }
+  async function inspect(receipt: PublicationReceipt) {
+    const publication = await canonical.publication(project.id, receipt);
+    if (!publication)
+      throw new RecoveryPublicationError(
+        "revision-conflict",
+        "Projeto confirmado indisponível.",
+        0,
+      );
+    if (
+      !publication.ack &&
+      publication.record.project.revision !== receipt.expectedRevision
+    )
+      throw new RecoveryPublicationError(
+        "revision-conflict",
+        "Outra sessão confirmou alterações. Recarregue ou baixe sua recuperação.",
+        publication.record.project.revision,
+      );
+    return publication;
   }
   return {
     mode: "browser-only",
     project: structuredClone(project),
-    resolveAsset: resolver,
+    resolveAsset,
     commit(batch) {
       const captured = structuredClone(batch);
       return serial(async () => {
-        if (captured.expectedRevision !== project.revision)
-          throw new Error(
-            "Conflito de revisão no navegador. Reabra ou baixe a recuperação.",
-          );
-        return acknowledge(
-          {
-            ...applyCommands(project, captured.commands),
-            revision: project.revision + 1,
-          },
-          captured.commandId,
+        const fingerprint = await hash(
+          new TextEncoder().encode(
+            JSON.stringify({
+              type: "commit",
+              expectedRevision: captured.expectedRevision,
+              commands: captured.commands,
+            }),
+          ),
+        );
+        const receipt = {
+          commandId: captured.commandId,
+          expectedRevision: captured.expectedRevision,
+          fingerprint,
+        };
+        const observed = await inspect(receipt);
+        if (observed.ack) return finish(observed);
+        for (const [name, value] of Object.entries(observed.record.assets))
+          Object.defineProperty(bytes, name, {
+            value: new Uint8Array(value),
+            enumerable: true,
+            writable: true,
+            configurable: true,
+          });
+        const next = {
+          ...applyCommands(observed.record.project, captured.commands),
+          revision: captured.expectedRevision + 1,
+        };
+        const validated = await createSnapshot(next, bytes);
+        return finish(
+          await canonical.publish(
+            confirmedInput(validated.project),
+            captured.expectedRevision,
+            receipt,
+          ),
         );
       });
     },
     importAsset(input, batch) {
-      const copied = {
+      const captured = {
         ...input,
         origin: structuredClone(input.origin),
         bytes: new Uint8Array(input.bytes),
       };
       const metadata = { ...batch };
       return serial(async () => {
-        if (metadata.expectedRevision !== project.revision)
-          throw new Error("Conflito de revisão no navegador.");
-        const digest = await hash(copied.bytes);
-        const asset = {
-          id: crypto.randomUUID(),
-          path: `assets/${digest}`,
-          hash: digest,
-          name: copied.name,
-          mimeType: copied.mimeType,
-          origin: copied.origin,
-        };
-        bytes[asset.path] = copied.bytes;
-        const ack = await acknowledge(
-          {
-            ...applyCommands(project, [{ type: "asset.insert", asset }]),
-            revision: project.revision + 1,
-          },
-          metadata.commandId,
+        const digest = await hash(captured.bytes);
+        const fingerprint = await hash(
+          new TextEncoder().encode(
+            JSON.stringify({
+              type: "asset",
+              expectedRevision: metadata.expectedRevision,
+              name: captured.name,
+              mimeType: captured.mimeType,
+              origin: captured.origin,
+              hash: digest,
+            }),
+          ),
         );
+        const receipt = { ...metadata, fingerprint };
+        const observed = await inspect(receipt);
+        let ack: SaveAck;
+        if (observed.ack) ack = await finish(observed);
+        else {
+          for (const [name, value] of Object.entries(observed.record.assets))
+            Object.defineProperty(bytes, name, {
+              value: new Uint8Array(value),
+              enumerable: true,
+              writable: true,
+              configurable: true,
+            });
+          const asset = {
+            id: crypto.randomUUID(),
+            path: `assets/${digest}`,
+            hash: digest,
+            name: captured.name,
+            mimeType: captured.mimeType,
+            origin: captured.origin,
+          };
+          bytes[asset.path] = captured.bytes;
+          const next = {
+            ...applyCommands(observed.record.project, [
+              { type: "asset.insert", asset },
+            ]),
+            revision: metadata.expectedRevision + 1,
+          };
+          const validated = await createSnapshot(next, bytes);
+          ack = await finish(
+            await canonical.publish(
+              confirmedInput(validated.project),
+              metadata.expectedRevision,
+              receipt,
+            ),
+          );
+        }
+        const asset = ack.project.assets.at(-1);
+        if (
+          !asset ||
+          asset.hash !== digest ||
+          asset.name !== captured.name ||
+          asset.mimeType !== captured.mimeType
+        )
+          throw new Error("Recibo de importação inválido");
         return { asset, ack };
       });
     },
     async reload() {
+      const publication = await canonical.publication(project.id);
+      if (!publication) throw new Error("Projeto confirmado indisponível");
+      await createSnapshot(
+        publication.record.project,
+        publication.record.assets,
+      );
+      copyConfirmed(publication.record);
       return structuredClone(project);
     },
     async exportPortable(revision) {
-      const snap = revisions.get(revision);
-      if (!snap) throw new Error("Revisão do navegador indisponível.");
-      return exportPortable(await createSnapshot(snap, bytes));
+      const previous = revisions.get(revision);
+      if (!previous) throw new Error("Revisão do navegador indisponível.");
+      return exportPortable(await createSnapshot(previous, bytes));
     },
     exportRecovery(visible) {
       return backup(visible, bytes);
@@ -170,29 +297,49 @@ export async function createBrowserRuntime(
         capture.confirmedRevision,
       );
       return serial(async () => {
-        await store.save({ ...capture, assets: bytes, mode: "browser-only" });
-        remember(capture.project.id);
+        try {
+          if (!store)
+            throw cacheFailure ?? new Error("Recuperação indisponível");
+          await store.save({ ...capture, assets: bytes, mode: "browser-only" });
+          remember(capture.project.id);
+        } catch (error) {
+          cacheFailure = error;
+          throw error;
+        }
+        const previousFailure = cacheFailure;
+        cacheFailure = undefined;
+        if (previousFailure) throw previousFailure;
       });
     },
     close() {
       closed = true;
-      urls.forEach(URL.revokeObjectURL);
+      urls.forEach((url) => URL.revokeObjectURL(url));
       urls.clear();
       void tail.finally(() => {
-        store.close();
+        store?.close();
         canonical.close();
       });
     },
   };
 }
 export async function resumeBrowserRuntime(): Promise<Startup> {
-  const store = await RecoveryStore.open();
+  let store: RecoveryStore | undefined;
+  try {
+    store = await RecoveryStore.open();
+  } catch {
+    /* Canonical storage and checkpoint health remain independent. */
+  }
   const canonical = await RecoveryStore.open({
     name: "marquio-browser-confirmed-v1",
   });
   try {
-    const id = localStorage.getItem(LAST);
-    const record = id ? await store.load(id) : undefined;
+    let id = await canonical.lastProjectId();
+    if (!id) {
+      try {
+        id = localStorage.getItem(LAST) ?? undefined;
+      } catch {}
+    }
+    const record = id ? await store?.load(id) : undefined;
     const confirmed = id ? await canonical.load(id) : undefined;
     if (record || confirmed) {
       const base = confirmed ?? record!;
@@ -204,7 +351,7 @@ export async function resumeBrowserRuntime(): Promise<Startup> {
     }
     return { runtime: await createBrowserRuntime() };
   } finally {
-    store.close();
+    store?.close();
     canonical.close();
   }
 }

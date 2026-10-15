@@ -6,6 +6,8 @@ import {
   type Startup,
 } from "./runtime";
 import { importPortable, exportPortable } from "../storage/portable";
+import { RecoveryPublicationError } from "../storage/recovery";
+import { parseProject } from "../core/project";
 import { createSnapshot } from "../storage/snapshot";
 import type { StudioRuntime } from "./runtime-contract";
 function download(bytes: Uint8Array, name: string) {
@@ -57,11 +59,26 @@ export function RuntimeBootstrap() {
     setError("");
   }
   async function open(file: File) {
-    await switchRuntime(
-      await createBrowserRuntime(
-        await importPortable(new Uint8Array(await file.arrayBuffer())),
-      ),
+    const snapshot = await importPortable(
+      new Uint8Array(await file.arrayBuffer()),
     );
+    let runtime: StudioRuntime;
+    try {
+      runtime = await createBrowserRuntime(snapshot);
+    } catch (error) {
+      if (
+        !(error instanceof RecoveryPublicationError) ||
+        error.code !== "revision-conflict"
+      )
+        throw error;
+      // Explicit Open creates an independent copy when this identity already has newer confirmed work.
+      const copy = parseProject(snapshot.project);
+      copy.id = crypto.randomUUID();
+      runtime = await createBrowserRuntime(
+        await createSnapshot(copy, snapshot.assets),
+      );
+    }
+    await switchRuntime(runtime);
   }
   async function recover() {
     if (!state?.recovery) return;

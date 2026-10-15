@@ -11,7 +11,12 @@ export function createLocalSession(origin: string) {
     if (request.headers.host !== expected.host) throw new SessionError(403, 'Invalid Host');
     const sentOrigin = request.headers.origin;
     if ((sentOrigin !== undefined && sentOrigin !== origin) || (!['GET', 'HEAD'].includes(request.method ?? '') && sentOrigin !== origin)) throw new SessionError(403, 'Invalid Origin');
-    if (request.headers['sec-fetch-site'] === 'cross-site') throw new SessionError(403, 'Cross-site requests are forbidden');
+    // Public top-level navigation can originate from a browser extension or another site.
+    // This exception never applies to APIs, session exchange, subresources, Host or Origin checks.
+    const publicDocument = ['GET', 'HEAD'].includes(request.method ?? '') &&
+      request.headers['sec-fetch-mode'] === 'navigate' && request.headers['sec-fetch-dest'] === 'document' &&
+      ['/', '/index.html'].includes((request.url ?? '/').split('?')[0]);
+    if (request.headers['sec-fetch-site'] === 'cross-site' && !publicDocument) throw new SessionError(403, 'Cross-site requests are forbidden');
   }
   function requireSession(request: IncomingMessage) {
     validateBoundary(request);
