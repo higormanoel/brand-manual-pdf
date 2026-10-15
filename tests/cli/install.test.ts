@@ -14,8 +14,8 @@ test('installs host-specific folders and preserves an existing skill unless forc
   const root = await temp();
   const codex = await installAgent({ agent: 'codex', targetRoot: root });
   const claude = await installAgent({ agent: 'claude', targetRoot: root });
-  expect(codex.directory).toBe(path.join(root, '.agents/skills/marquio'));
-  expect(claude.directory).toBe(path.join(root, '.claude/skills/marquio'));
+  expect(codex.directory).toBe(path.join(await fs.realpath(root), '.agents/skills/marquio'));
+  expect(claude.directory).toBe(path.join(await fs.realpath(root), '.claude/skills/marquio'));
   await fs.writeFile(path.join(codex.directory, 'SKILL.md'), 'user custom skill');
   await expect(installAgent({ agent: 'codex', targetRoot: root })).rejects.toThrow(/exist/i);
   expect(await fs.readFile(path.join(codex.directory, 'SKILL.md'), 'utf8')).toBe('user custom skill');
@@ -48,4 +48,51 @@ test('adapter reference contracts keep optional intake and revision-safe editing
     expect(skill).toMatch(/name: marquio/);
     for (const contract of ['expectedRevision', 'commandId', 'skipped', 'pending', 'Studio', 'import-asset', 'apply', 'generate', 'validate', 'export']) expect(skill + workflow).toContain(contract);
   }
+});
+for (const agent of ['codex', 'claude'] as const) {
+  const host = agent === 'codex' ? '.agents' : '.claude';
+  for (const redirected of ['host', 'skills', 'leaf'] as const) {
+    for (const overwrite of [false, true]) test(`${agent} rejects a redirected ${redirected} destination (force=${overwrite}) and preserves external bytes`, async () => {
+      const root = await temp();
+      const targetRoot = path.join(root, 'target');
+      const external = path.join(root, 'external');
+      const externalSkill = path.join(external, 'skills/marquio');
+      await fs.mkdir(externalSkill, { recursive: true });
+      await fs.mkdir(targetRoot);
+      const marker = path.join(externalSkill, 'keep.txt');
+      await fs.writeFile(marker, 'external custom data');
+      let link: string;
+      let destination: string;
+      if (redirected === 'host') { link = path.join(targetRoot, host); destination = external; }
+      else if (redirected === 'skills') {
+        await fs.mkdir(path.join(targetRoot, host));
+        link = path.join(targetRoot, host, 'skills'); destination = path.join(external, 'skills');
+      } else {
+        await fs.mkdir(path.join(targetRoot, host, 'skills'), { recursive: true });
+        link = path.join(targetRoot, host, 'skills/marquio'); destination = externalSkill;
+      }
+      await fs.symlink(destination, link, 'dir');
+      await expect(installAgent({ agent, targetRoot, overwrite })).rejects.toThrow(/symlink/i);
+      expect(await fs.readFile(marker, 'utf8')).toBe('external custom data');
+      expect(await fs.readlink(link)).toBe(destination);
+      await expect(fs.access(path.join(externalSkill, 'SKILL.md'))).rejects.toThrow();
+    });
+  }
+  test(`${agent} rejects redirected ancestors before creating a missing external skill`, async () => {
+    const root = await temp();
+    const targetRoot = path.join(root, 'target'); const external = path.join(root, 'external');
+    await fs.mkdir(targetRoot); await fs.mkdir(external);
+    const link = path.join(targetRoot, host);
+    await fs.symlink(external, link, 'dir');
+    await expect(installAgent({ agent, targetRoot, overwrite: true })).rejects.toThrow(/symlink/i);
+    expect(await fs.readdir(external)).toEqual([]);
+    expect(await fs.readlink(link)).toBe(external);
+  });
+}
+test('canonicalizes an explicitly selected root alias without rejecting source or root symlinks', async () => {
+  const root = await temp(); const actual = path.join(root, 'actual'); const alias = path.join(root, 'chosen alias');
+  await fs.mkdir(actual); await fs.symlink(actual, alias, 'dir');
+  const installed = await installAgent({ agent: 'codex', targetRoot: alias });
+  expect(installed.directory).toBe(path.join(await fs.realpath(actual), '.agents/skills/marquio'));
+  expect(await fs.readlink(alias)).toBe(actual);
 });

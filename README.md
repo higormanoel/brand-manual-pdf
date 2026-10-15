@@ -6,7 +6,7 @@ Marquio runs locally without an account. Codex and Claude Code are two entrances
 
 ## Run from this repository
 
-Requires **Node.js 22+**, npm and Chromium. Install Playwright's Chromium below, or use an installed Chrome/Chromium with `MARQUIO_CHROMIUM_EXECUTABLE=/absolute/path/to/browser`. On Linux, Playwright's `--with-deps` installs required system libraries. Tests that inspect PDF text also require Poppler (`pdftotext`). This package is private; these commands use a checkout, not a published npm package.
+Requires **Node.js 22+**, npm and Chromium. Install Playwright's Chromium below, or use an installed Chrome/Chromium with `MARQUIO_CHROMIUM_EXECUTABLE=/absolute/path/to/browser`. On Linux, Playwright's `--with-deps` installs required system libraries. Tests that inspect PDF text also require Poppler (`pdftotext`). No npm package has been published yet; install from this repository.
 
 ```bash
 git clone https://github.com/higormanoel/brand-manual-pdf.git
@@ -49,7 +49,7 @@ node bin/marquio.mjs install --agent claude --target "/path/to/client-work"
 
 Codex discovers `.agents/skills/marquio` and invokes `$marquio`; Claude Code discovers `.claude/skills/marquio` and invokes `/marquio`. For a personal installation, explicitly pass your home directory as `--target "$HOME"`. Existing installations are preserved unless you add `--force`. Review the target first: force replaces that Marquio skill folder.
 
-The installed launcher references this source checkout and its build, safely passing arguments without a shell. Keep the checkout available; rebuild after updating and reinstall after moving it. It works from another working directory and with spaces in paths. It neither changes agent authentication nor installs global packages. Paths follow the official [Codex skills documentation](https://learn.chatgpt.com/docs/build-skills) and [Claude Code skills documentation](https://code.claude.com/docs/en/skills), checked 15 October 2026.
+The installed launcher references this source checkout and its build, safely passing arguments without a shell. Keep the checkout available; rebuild after updating and reinstall after moving it. It works from another working directory and with spaces in paths. It does not change agent authentication or install global npm packages. Paths follow the official [Codex skills documentation](https://learn.chatgpt.com/docs/build-skills) and [Claude Code skills documentation](https://code.claude.com/docs/en/skills), checked 15 October 2026.
 
 The adapters collect optional briefing fields, preserve skipped choices and pending suggestions, use the canonical CLI and open the real Studio before final PDF delivery. External generation is optional: provide your own available service or import its result. Included scenes, planar templates and prompts work without a provider account.
 

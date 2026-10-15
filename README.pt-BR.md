@@ -6,7 +6,7 @@ O fluxo principal roda localmente, sem conta. Codex e Claude Code abrem o mesmo 
 
 ## Executar
 
-Requisitos: **Node.js 22+**, npm e Chromium. Instale o Chromium do Playwright ou defina `MARQUIO_CHROMIUM_EXECUTABLE` com o caminho absoluto do Chrome/Chromium. No Linux, `npx playwright install --with-deps chromium` instala também as bibliotecas do sistema. Os testes de extração de texto do PDF precisam de Poppler (`pdftotext`). O pacote é privado; a instalação usa este repositório, sem publicação npm.
+Requisitos: **Node.js 22+**, npm e Chromium. Instale o Chromium do Playwright ou defina `MARQUIO_CHROMIUM_EXECUTABLE` com o caminho absoluto do Chrome/Chromium. No Linux, `npx playwright install --with-deps chromium` instala também as bibliotecas do sistema. Os testes de extração de texto do PDF precisam de Poppler (`pdftotext`). Ainda não há pacote publicado no npm; instale a partir do repositório.
 
 ```bash
 git clone https://github.com/higormanoel/brand-manual-pdf.git
@@ -45,7 +45,7 @@ node bin/marquio.mjs install --agent codex --target "/caminho/do/trabalho"
 node bin/marquio.mjs install --agent claude --target "/caminho/do/trabalho"
 ```
 
-Codex usa `.agents/skills/marquio` e `$marquio`; Claude Code usa `.claude/skills/marquio` e `/marquio`. Para instalar pessoalmente, passe `--target "$HOME"`. Uma instalação existente é preservada; `--force` substitui apenas a pasta dessa skill. O launcher referencia este checkout/build, funciona com espaços e em outro diretório. Mantenha o repositório, refaça o build após atualizar e reinstale se o mover. Nenhuma instalação global ou autenticação é alterada.
+Codex usa `.agents/skills/marquio` e `$marquio`; Claude Code usa `.claude/skills/marquio` e `/marquio`. Para instalar pessoalmente, passe `--target "$HOME"`. Uma instalação existente é preservada; `--force` substitui apenas a pasta dessa skill. O launcher referencia este checkout/build, funciona com espaços e em outro diretório. Mantenha o repositório, refaça o build após atualizar e reinstale se o mover. Não altera autenticação nem instala pacotes globais do npm.
 
 Os caminhos seguem as documentações oficiais de [Codex](https://learn.chatgpt.com/docs/build-skills) e [Claude Code](https://code.claude.com/docs/en/skills), consultadas em 15/10/2026. Os adaptadores preservam omissões e sugestões pendentes, usam revisão confirmada e abrem o Studio antes da entrega final. Geração externa é opcional e depende de um provedor disponível escolhido pelo usuário ou de um resultado importado. Templates, cenas e prompts incluídos funcionam sem essa conta.
 
