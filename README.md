@@ -4,6 +4,10 @@ Build a brand manual from the identity materials you have, then finish it in an 
 
 Marquio runs locally without an account. Codex and Claude Code are two entrances to the same application and project format. [Guia em português](README.pt-BR.md).
 
+![Marquio Studio editing the fictitious Aurora application](docs/assets/studio-desktop.png)
+
+[Watch the real Studio workflow](docs/assets/studio-walkthrough.gif) · [Open the example PDF](examples/Aurora.pdf) · [Download the editable project](examples/Aurora.marquio.zip)
+
 ## Run from this repository
 
 Requires **Node.js 22+**, npm and Chromium. Install Playwright's Chromium below, or use an installed Chrome/Chromium with `MARQUIO_CHROMIUM_EXECUTABLE=/absolute/path/to/browser`. On Linux, Playwright's `--with-deps` installs required system libraries. Tests that inspect PDF text also require Poppler (`pdftotext`). No npm package has been published yet; install from this repository.
@@ -26,6 +30,17 @@ node bin/marquio.mjs studio ./aurora-demo --demo
 ```
 
 Aurora is a fictitious neighborhood coffee roaster. Its text, identity and illustrations are original. Three original generated photographic base scenes, with [generation prompts and provenance](public/mockups/PROVENANCE.md), receive separate editable client artwork. These are presentation composites, not photographs of a real client's printed production. No paid generation service is needed.
+
+## Try the finished example
+
+The included [Aurora PDF](examples/Aurora.pdf) has 46 pages, exported at confirmed revision 0. Its [portable source](examples/Aurora.marquio.zip) includes all 11 original assets. Open the portable from Studio's project menu to edit it in browser-only mode, or generate a fresh local copy:
+
+```bash
+node examples/create-demo.mjs ./marquio-demo-output
+node bin/marquio.mjs studio ./marquio-demo-output/aurora
+```
+
+The helper calls the production CLI and local export API; it refuses to replace an existing example. [Example and capture details](examples/README.md) include the provenance, reproduction steps and limits. [Narrow desktop](docs/assets/studio-narrow.png) and [mobile preview](docs/assets/studio-mobile.png) show the actual responsive Studio.
 
 ## Finish a manual
 

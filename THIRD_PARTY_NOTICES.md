@@ -13,7 +13,7 @@ The new Marquio application code, adapters and documentation are MIT licensed; s
 
 Direct npm package license metadata checked from this checkout on 15 October 2026:
 
-- Runtime: React and React DOM (MIT), Zod (MIT), pdf-lib (MIT), JSZip (MIT OR GPL-3.0-or-later; used under MIT), `@fontsource/inter` (OFL-1.1).
-- Tooling: TypeScript and Playwright (Apache-2.0); Vite, Vitest and the Vite React plugin (MIT). Other development dependencies and transitive packages carry the notices installed with those packages. This summary does not replace their full license files.
+- Runtime: React and React DOM (MIT), Zod (MIT), pdf-lib (MIT), JSZip (MIT OR GPL-3.0-or-later; used under MIT), `@fontsource/inter` (OFL-1.1), Playwright (Apache-2.0).
+- Tooling: TypeScript and the Playwright test runner (Apache-2.0); Vite, Vitest and the Vite React plugin (MIT). Other development dependencies and transitive packages carry the notices installed with those packages. This summary does not replace their full license files.
 
 Chromium is installed separately through Playwright or supplied by the user; its own licenses apply. The private source reference, its extracted imagery and commercial fonts are not included. Do not add them to examples, bundles, screenshots or documentation.

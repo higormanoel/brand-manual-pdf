@@ -3,6 +3,7 @@
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import { execFile } from 'node:child_process';
 import { chromium, expect } from '@playwright/test';
@@ -73,6 +74,7 @@ try {
   await recorder;
   const sequence = frames.map((frame, index) => `file '${frame.name}'\nduration ${((frames[index + 1]?.time ?? frame.time + 200) - frame.time) / 1000}`).join('\n');
   await fs.writeFile(path.join(temporary, 'frames.txt'), sequence + '\n');
+  await fs.writeFile(path.join(temporary, 'frames.json'), JSON.stringify(frames));
   const palette = project.pages.find(item => item.title === 'Paleta de cores');
   await select(palette.id);
   await page.setViewportSize({ width: 1024, height: 768 });
@@ -85,6 +87,10 @@ try {
   await page.getByRole('button', { name: 'Ajustar à janela', exact: true }).click();
   await page.screenshot({ path: path.join(output, 'studio-mobile.png') });
   await context.close();
-  await promisify(execFile)('ffmpeg', ['-y', '-f', 'concat', '-safe', '0', '-i', path.join(temporary, 'frames.txt'), '-vf', 'fps=5,scale=960:-1:flags=lanczos,split[s0][s1];[s0]palettegen=max_colors=128[p];[s1][p]paletteuse=dither=bayer', '-loop', '0', path.join(output, 'studio-walkthrough.gif')], { maxBuffer: 1024 * 1024 });
+  try {
+    await promisify(execFile)(process.env.MARQUIO_FFMPEG_EXECUTABLE ?? 'ffmpeg', ['-y', '-f', 'concat', '-safe', '0', '-i', path.join(temporary, 'frames.txt'), '-vf', 'fps=5,scale=960:-1:flags=lanczos,split[s0][s1];[s0]palettegen=max_colors=128[p];[s1][p]paletteuse=dither=bayer', '-loop', '0', path.join(output, 'studio-walkthrough.gif')], { maxBuffer: 1024 * 1024 });
+  } catch {
+    await promisify(execFile)(process.env.MARQUIO_PYTHON ?? 'python3', [fileURLToPath(new URL('./frames-to-gif.py', import.meta.url)), temporary, path.join(output, 'studio-walkthrough.gif')], { maxBuffer: 1024 * 1024 });
+  }
   console.log(JSON.stringify({ output, mode: 'production local runtime', copiedSourceRevision: project.revision, finalCopyRevision: (await server.repository.load()).revision }));
 } finally { recording = false; await recorder?.catch(() => {}); await browser?.close(); await server.close(); await fs.rm(temporary, { recursive: true, force: true }); }

@@ -4,6 +4,10 @@ Monte um manual com os materiais de identidade que você tem e finalize no Studi
 
 O fluxo principal roda localmente, sem conta. Codex e Claude Code abrem o mesmo aplicativo e formato de projeto. [English guide](README.md).
 
+![Marquio Studio com a aplicação da marca fictícia Aurora](docs/assets/studio-desktop.png)
+
+[Fluxo real no Studio](docs/assets/studio-walkthrough.gif) · [PDF de exemplo](examples/Aurora.pdf) · [Projeto editável](examples/Aurora.marquio.zip)
+
 ## Executar
 
 Requisitos: **Node.js 22+**, npm e Chromium. Instale o Chromium do Playwright ou defina `MARQUIO_CHROMIUM_EXECUTABLE` com o caminho absoluto do Chrome/Chromium. No Linux, `npx playwright install --with-deps chromium` instala também as bibliotecas do sistema. Os testes de extração de texto do PDF precisam de Poppler (`pdftotext`). Ainda não há pacote publicado no npm; instale a partir do repositório.
@@ -24,6 +28,17 @@ node bin/marquio.mjs studio ./aurora-demo --demo
 ```
 
 Aurora é uma torrefação e café fictícios. Textos, identidade e ilustrações são originais. As três cenas fotográficas geradas para o produto têm [prompts e procedência](public/mockups/PROVENANCE.md), com arte aplicada em camada separada. São composições de apresentação, sem representar a produção real de um cliente. Não exigem geração paga.
+
+## Abrir o exemplo pronto
+
+O [PDF Aurora](examples/Aurora.pdf) tem 46 páginas, exportadas da revisão confirmada 0. O [projeto portátil](examples/Aurora.marquio.zip) inclui os 11 assets originais. Abra-o pelo menu de projeto do Studio para editar no modo navegador, ou gere uma cópia local nova:
+
+```bash
+node examples/create-demo.mjs ./marquio-demo-output
+node bin/marquio.mjs studio ./marquio-demo-output/aurora
+```
+
+O helper usa a CLI de produção e a API local de exportação, recusando sobrescrever um exemplo existente. Veja [procedência e reprodução](examples/README.md), [desktop estreito](docs/assets/studio-narrow.png) e [prévia no celular](docs/assets/studio-mobile.png).
 
 ## Do briefing à entrega
 
