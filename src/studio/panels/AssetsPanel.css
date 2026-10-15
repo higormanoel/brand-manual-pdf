@@ -1,0 +1,78 @@
+.marquio-assets {
+  font:
+    12px Inter,
+    Arial,
+    sans-serif;
+  color: #f1f1f1;
+  background: #202020;
+  padding: 12px;
+  min-width: 0;
+}
+.marquio-assets h2 {
+  font-size: 16px;
+  margin: 0 0 14px;
+}
+.marquio-assets p,
+.marquio-assets small {
+  color: #b5b5b5;
+  line-height: 1.5;
+}
+.marquio-assets label {
+  display: block;
+}
+.marquio-assets input {
+  width: 100%;
+  margin-top: 8px;
+  color: inherit;
+  font: inherit;
+}
+.marquio-assets ul {
+  list-style: none;
+  padding: 0;
+  margin: 16px 0;
+}
+.marquio-assets li {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  border-top: 1px solid #3a3a3a;
+  padding: 12px 0;
+}
+.marquio-assets img {
+  width: 100%;
+  height: 100px;
+  object-fit: contain;
+  background: #303030;
+}
+.marquio-assets summary {
+  cursor: pointer;
+  color: #d8d8d8;
+}
+.marquio-assets dt {
+  color: #b5b5b5;
+  margin-top: 6px;
+}
+.marquio-assets dd {
+  margin: 4px 0;
+  overflow-wrap: anywhere;
+  font-size: 11px;
+}
+.marquio-assets button {
+  font: inherit;
+  color: inherit;
+  border: 1px solid #515151;
+  border-radius: 4px;
+  background: #292929;
+  padding: 7px;
+  cursor: pointer;
+}
+.marquio-assets button:hover {
+  background: #363636;
+}
+.marquio-assets :is(button, input, summary):focus-visible {
+  outline: 2px solid #b9d5ff;
+  outline-offset: 2px;
+}
+.marquio-assets [role="alert"] {
+  color: #ffb4ab;
+}
